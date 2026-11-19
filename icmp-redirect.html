@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Penjelasan defensif ICMP Redirect: fungsi sah, alur penyalahgunaan, struktur paket, mitigasi, dan kuis.">
+  <title>Mekanisme Serangan ICMP Redirect</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #101f32;
+      --panel-2: #14263c;
+      --line: #2a405a;
+      --text: #edf5ff;
+      --muted: #a9bbd0;
+      --cyan: #66e3dc;
+      --blue: #70a9ff;
+      --amber: #ffd166;
+      --red: #ff8291;
+      --green: #8be0ad;
+      --radius: 18px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      scroll-behavior: smooth;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(ellipse at 10% 5%, rgb(38 104 126 / 18%), transparent 36rem),
+        radial-gradient(ellipse at 95% 22%, rgb(57 78 141 / 16%), transparent 34rem),
+        var(--bg);
+      line-height: 1.65;
+    }
+
+    a { color: var(--cyan); }
+    a:hover { color: white; }
+    button, summary { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, a:focus-visible, summary:focus-visible, .packet-field:focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 3px;
+    }
+
+    .wrap { width: min(1120px, calc(100% - 36px)); margin-inline: auto; }
+    .topbar { padding: 18px 0; border-bottom: 1px solid rgb(169 187 208 / 14%); }
+    .topbar-inner { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: .9rem; font-weight: 750; letter-spacing: .04em; }
+    .brand-mark {
+      display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px;
+      color: var(--bg); background: var(--cyan); font-weight: 900;
+    }
+    .nav { display: flex; flex-wrap: wrap; gap: 18px; font-size: .87rem; }
+    .nav a { color: var(--muted); text-decoration: none; }
+    .nav a:hover { color: var(--text); }
+
+    .hero { padding: 74px 0 42px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px;
+      border: 1px solid rgb(102 227 220 / 30%); border-radius: 999px;
+      color: var(--cyan); background: rgb(102 227 220 / 7%);
+      font-size: .78rem; font-weight: 750; letter-spacing: .09em; text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    h1 { max-width: 880px; margin: 20px 0 16px; font-size: clamp(2.5rem, 7vw, 5rem); line-height: 1.04; letter-spacing: -.055em; }
+    h1 span { color: var(--cyan); }
+    .hero-copy { max-width: 740px; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.2rem); }
+    .hero-note { display: flex; gap: 12px; align-items: flex-start; max-width: 760px; margin-top: 24px; padding: 14px 16px; border-left: 3px solid var(--amber); border-radius: 0 12px 12px 0; color: #e5d7b4; background: rgb(255 209 102 / 7%); font-size: .94rem; }
+
+    main { padding-bottom: 60px; }
+    section { padding: 42px 0; scroll-margin-top: 18px; }
+    .section-heading { max-width: 760px; margin-bottom: 22px; }
+    .section-tag { margin: 0 0 6px; color: var(--cyan); font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin: 0 0 9px; font-size: clamp(1.8rem, 4vw, 2.65rem); line-height: 1.14; letter-spacing: -.035em; }
+    h3 { margin: 0 0 8px; font-size: 1.07rem; }
+    p { margin: 0 0 14px; }
+    .lead { color: var(--muted); font-size: 1.05rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card, .panel {
+      border: 1px solid var(--line); border-radius: var(--radius);
+      background: linear-gradient(145deg, rgb(20 38 60 / 92%), rgb(13 27 44 / 96%));
+    }
+    .card { padding: 21px; }
+    .card p:last-child { margin-bottom: 0; }
+    .muted { color: var(--muted); }
+    .mini-label { color: var(--muted); font-size: .77rem; text-transform: uppercase; letter-spacing: .08em; }
+    .code {
+      display: inline-block; max-width: 100%; overflow-wrap: anywhere; padding: 2px 7px; border: 1px solid #314761; border-radius: 7px;
+      color: #d3ecff; background: #0a1726;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em;
+    }
+
+    .type-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .type-list li { display: grid; grid-template-columns: 58px 1fr; gap: 10px; color: var(--muted); }
+    .type-list strong { color: var(--text); }
+    .type-code { color: var(--cyan); font-family: ui-monospace, monospace; font-weight: 750; }
+    .purpose {
+      display: flex; gap: 13px; padding: 17px; border: 1px solid rgb(139 224 173 / 27%);
+      border-radius: 14px; background: rgb(139 224 173 / 6%);
+    }
+    .purpose-mark { color: var(--green); font-size: 1.25rem; line-height: 1.3; }
+    .purpose strong { color: #c1f3d2; }
+
+    .sim-shell { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(275px, .85fr); gap: 16px; align-items: stretch; }
+    .diagram-card { overflow: hidden; }
+    .diagram-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 20px 20px 0; }
+    .diagram-top p { color: var(--muted); font-size: .86rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 0 20px 14px; color: var(--muted); font-size: .76rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 18px; height: 3px; border-radius: 3px; background: var(--blue); }
+    .legend .fake { background: var(--red); }
+    .legend .new-route { background: var(--amber); }
+    .diagram { display: block; width: 100%; height: auto; min-height: 290px; }
+    .diagram .link { fill: none; stroke: #536a84; stroke-width: 3; stroke-dasharray: 6 7; opacity: .25; transition: opacity .25s, stroke .25s; }
+    .diagram .link.active { stroke: var(--blue); stroke-dasharray: none; opacity: 1; }
+    .diagram .link.redirect { stroke: var(--red); stroke-dasharray: 7 6; }
+    .diagram .link.rerouted { stroke: var(--amber); stroke-dasharray: none; }
+    .diagram .node rect { fill: #12243a; stroke: #3b536d; stroke-width: 1.5; }
+    .diagram .node .icon { fill: #172d46; stroke: #36506a; }
+    .diagram .node text { fill: var(--text); font-family: system-ui, sans-serif; }
+    .diagram .node .sub { fill: var(--muted); font-size: 12px; }
+    .diagram .node .title { font-size: 15px; font-weight: 750; }
+    .diagram .node .ip { fill: #a8c9ed; font-family: ui-monospace, monospace; font-size: 11px; }
+    .diagram .host rect { stroke: var(--cyan); }
+    .diagram .attacker rect { stroke: var(--red); }
+    .diagram .internet rect { stroke: var(--blue); }
+    .diagram .edge-label { fill: var(--muted); font-family: system-ui, sans-serif; font-size: 11px; }
+    .diagram .label-red { fill: var(--red); }
+    .diagram .label-amber { fill: var(--amber); }
+    .subnet-note { padding: 0 20px 18px; color: var(--muted); font-size: .79rem; }
+
+    .step-panel { display: flex; flex-direction: column; padding: 20px; }
+    .step-count { color: var(--cyan); font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .step-panel h3 { margin: 8px 0 7px; font-size: 1.28rem; }
+    .step-description { min-height: 78px; color: var(--muted); font-size: .93rem; }
+    .route-title { margin: 13px 0 8px; font-size: .82rem; font-weight: 800; }
+    .route-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+    .route-table th, .route-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .route-table th { color: var(--muted); font-size: .7rem; font-weight: 650; }
+    .route-table td { font-family: ui-monospace, monospace; }
+    .route-state { display: inline-flex; align-items: center; gap: 6px; margin: 11px 0 0; color: var(--muted); font-size: .76rem; }
+    .route-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .route-state.changed { color: #ffe4a0; }
+    .route-state.changed::before { background: var(--amber); }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 18px; }
+    .control {
+      min-height: 39px; padding: 8px 11px; border: 1px solid #3a526e; border-radius: 10px;
+      background: #12243a; font-size: .82rem; font-weight: 700; cursor: pointer;
+    }
+    .control:hover { border-color: var(--cyan); background: #19304a; }
+    .control.primary { color: #061821; border-color: var(--cyan); background: var(--cyan); }
+    .control:disabled { opacity: .4; cursor: not-allowed; }
+    .sim-disclaimer { margin: 14px 0 0; color: var(--muted); font-size: .82rem; }
+
+    .packet-card { padding: 20px; }
+    .packet-layout {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden;
+      border: 1px solid #43607b; border-radius: 14px;
+    }
+    .packet-field {
+      display: flex; min-height: 84px; flex-direction: column; justify-content: center; gap: 4px;
+      padding: 12px; border: 0; border-right: 1px solid #43607b; border-bottom: 1px solid #43607b;
+      color: var(--text); background: #152b43; text-align: left; cursor: pointer; transition: background .2s;
+    }
+    .packet-field:hover, .packet-field[aria-pressed="true"] { background: #20415c; }
+    .packet-field:nth-child(4n) { border-right: 0; }
+    .packet-field:nth-last-child(-n+2) { border-bottom: 0; }
+    .packet-field .field-name { font-size: .87rem; font-weight: 800; }
+    .packet-field .field-width { color: var(--muted); font-family: ui-monospace, monospace; font-size: .73rem; }
+    .packet-field.wide { grid-column: span 2; }
+    .field-explainer { min-height: 68px; margin-top: 14px; padding: 14px; border-radius: 12px; color: var(--muted); background: #0a1726; }
+    .field-explainer strong { color: var(--cyan); }
+    .packet-note { margin: 14px 0 0; color: var(--muted); font-size: .84rem; }
+
+    .compare-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+    table.compare { width: 100%; min-width: 760px; border-collapse: collapse; background: #0d1b2c; }
+    .compare th, .compare td { padding: 14px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .compare th { color: var(--cyan); background: #12243a; font-size: .78rem; letter-spacing: .04em; }
+    .compare td { color: var(--muted); font-size: .9rem; }
+    .compare td:first-child { color: var(--text); font-weight: 750; }
+    .compare tr:last-child td { border-bottom: 0; }
+
+    .risk-card { border-color: rgb(255 130 145 / 35%); }
+    .risk-badge { display: inline-flex; margin-bottom: 10px; padding: 4px 8px; border-radius: 999px; color: #ffb9c1; background: rgb(255 130 145 / 11%); font-size: .74rem; font-weight: 800; }
+    .check-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .check-list li { display: grid; grid-template-columns: 23px 1fr; gap: 8px; color: var(--muted); }
+    .check-list li::before { content: "✓"; color: var(--green); font-weight: 900; }
+    .config-block { overflow: hidden; margin-top: 14px; border: 1px solid #304762; border-radius: 12px; background: #081421; }
+    .config-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 13px; border-bottom: 1px solid #304762; color: var(--muted); font-size: .76rem; }
+    pre { overflow-x: auto; margin: 0; padding: 14px; color: #d8eaff; font: .82rem/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .config-foot { padding: 0 14px 13px; color: var(--muted); font-size: .81rem; }
+    .warning-note { margin-top: 12px; padding: 12px 14px; border: 1px solid rgb(255 209 102 / 24%); border-radius: 12px; color: #e6d5aa; background: rgb(255 209 102 / 6%); font-size: .84rem; }
+    details { border: 1px solid var(--line); border-radius: 12px; background: #0c1929; }
+    details + details { margin-top: 9px; }
+    summary { padding: 13px 15px; font-weight: 750; cursor: pointer; }
+    details p { padding: 0 15px 13px; color: var(--muted); font-size: .9rem; }
+    .refs { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+    .refs li { display: grid; grid-template-columns: 85px 1fr; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #0d1b2c; }
+    .refs strong { color: var(--cyan); }
+    .refs p { margin: 4px 0 0; color: var(--muted); font-size: .88rem; }
+    .refs a { overflow-wrap: anywhere; }
+    .verify-note { color: #e6d5aa !important; }
+
+    .quiz { display: grid; gap: 14px; }
+    .question { padding: 18px; }
+    .question legend { padding: 0 7px; font-weight: 800; }
+    .question fieldset { margin: 0; padding: 0; border: 0; }
+    .answers { display: grid; gap: 8px; }
+    .answers label { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 9px; color: var(--muted); background: #0b1828; cursor: pointer; }
+    .answers label:hover { color: var(--text); background: #142940; }
+    .answers input { margin-top: 5px; accent-color: var(--cyan); }
+    .quiz-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+    #quiz-result { color: var(--muted); }
+    #quiz-result.good { color: var(--green); }
+    #quiz-result.needs-work { color: var(--amber); }
+    footer { padding: 24px 0 38px; border-top: 1px solid rgb(169 187 208 / 14%); color: var(--muted); font-size: .83rem; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 16px; }
+
+    @media (max-width: 820px) {
+      .sim-shell { grid-template-columns: 1fr; }
+      .step-panel { min-height: 0; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .wrap { width: min(100% - 24px, 1120px); }
+      .topbar-inner { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .nav { gap: 8px 14px; }
+      .hero { padding-top: 48px; }
+      section { padding: 30px 0; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .diagram-top { flex-direction: column; }
+      .diagram { min-height: 220px; }
+      .packet-field { min-height: 72px; padding: 9px; }
+      .packet-field .field-name { font-size: .76rem; }
+      .packet-field .field-width { font-size: .66rem; }
+      .packet-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .packet-field:nth-child(4n) { border-right: 1px solid #43607b; }
+      .packet-field:nth-child(2n) { border-right: 0; }
+      .packet-field:nth-last-child(-n+2) { border-bottom: 1px solid #43607b; }
+      .packet-field:last-child { border-bottom: 0; }
+      .refs li { grid-template-columns: 1fr; gap: 3px; }
+      .footer-inner { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+
+    /* Mobile-first layout: stacked content and controls, expanded at tablet/desktop widths. */
+    .wrap { width: min(1120px, calc(100% - 24px)); }
+    .topbar-inner { align-items: flex-start; flex-direction: column; gap: 12px; }
+    .nav { gap: 8px 14px; }
+    .hero { padding: 48px 0 30px; }
+    section { padding: 30px 0; }
+    .grid-2, .grid-3, .sim-shell { grid-template-columns: 1fr; }
+    .grid-2 > *, .grid-3 > *, .sim-shell > *, .card, .panel { min-width: 0; }
+    .config-block { max-width: 100%; }
+    .type-list li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .refs li { grid-template-columns: 1fr; gap: 3px; }
+    .diagram-top { flex-direction: column; }
+    .packet-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 640px) {
+      .wrap { width: min(1120px, calc(100% - 36px)); }
+      .type-list li { grid-template-columns: 58px minmax(0, 1fr); gap: 10px; }
+      .refs li { grid-template-columns: 85px minmax(0, 1fr); gap: 12px; }
+    }
+    @media (min-width: 900px) {
+      .topbar-inner { align-items: center; flex-direction: row; }
+      .hero { padding: 74px 0 42px; }
+      section { padding: 42px 0; }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .sim-shell { grid-template-columns: minmax(0, 1.65fr) minmax(275px, .85fr); }
+      .diagram-top { flex-direction: row; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#atas" aria-label="Kembali ke bagian atas">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>NETWORK SECURITY · MODUL BELAJAR</span>
+      </a>
+      <nav class="nav" aria-label="Navigasi halaman">
+        <a href="#dasar">Dasar</a>
+        <a href="#simulasi">Simulasi</a>
+        <a href="#mitigasi">Mitigasi</a>
+        <a href="#kuis">Kuis</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="atas" class="wrap">
+    <section class="hero" aria-labelledby="page-title">
+      <span class="eyebrow">Jaringan · ICMPv4 · Type 5</span>
+      <h1 id="page-title">Mekanisme Serangan <span>ICMP Redirect</span></h1>
+      <p class="hero-copy">Pahami bagaimana pesan kontrol jaringan yang punya fungsi sah dapat disalahgunakan untuk mengubah rute host—dan bagaimana mengurangi risikonya.</p>
+      <div class="hero-note">
+        <span aria-hidden="true">ⓘ</span>
+        <span><strong>Materi edukasi defensif.</strong> Animasi di bawah adalah simulasi konseptual di jaringan dokumentasi, bukan demonstrasi pengiriman paket atau instruksi untuk menyerang jaringan nyata.</span>
+      </div>
+    </section>
+
+    <section id="dasar" aria-labelledby="dasar-title">
+      <div class="section-heading">
+        <p class="section-tag">Bagian B · Konsep dasar</p>
+        <h2 id="dasar-title">ICMP memberi kabar tentang kondisi jaringan</h2>
+        <p class="lead">Internet Control Message Protocol (ICMP) adalah protokol kontrol yang dibawa di dalam IP. Perangkat jaringan dan host memakainya untuk melaporkan kondisi atau kendala pengiriman—misalnya tujuan tidak terjangkau, TTL habis, atau rute yang lebih baik tersedia.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <span class="mini-label">ICMPv4 Type 5</span>
+          <h3 style="margin-top:8px">Redirect: saran rute alternatif</h3>
+          <p class="muted">Router yang menerima paket dari host dapat mengirim Redirect ketika mengetahui bahwa host dan next-hop yang lebih tepat berada pada jaringan lokal yang sama. Host diberi tahu bahwa ada gateway yang lebih baik untuk tujuan tertentu.</p>
+          <ul class="type-list" aria-label="Kode ICMP Redirect">
+            <li><span class="type-code">Code 0</span><span><strong>Network</strong> — redirect untuk jaringan.</span></li>
+            <li><span class="type-code">Code 1</span><span><strong>Host</strong> — redirect untuk host tertentu.</span></li>
+            <li><span class="type-code">Code 2</span><span><strong>TOS + Network</strong> — redirect berdasarkan Type of Service dan jaringan.</span></li>
+            <li><span class="type-code">Code 3</span><span><strong>TOS + Host</strong> — redirect berdasarkan Type of Service dan host.</span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <span class="mini-label">Fungsi yang sah</span>
+          <h3 style="margin-top:8px">Bukan selalu serangan</h3>
+          <div class="purpose">
+            <span class="purpose-mark" aria-hidden="true">↗</span>
+            <p><strong>Tujuan protokol:</strong> memberi tahu host bahwa gateway lain pada subnet yang sama dapat menjadi next-hop yang lebih baik, sehingga jalur paket lebih efisien. RFC menjelaskan router tetap meneruskan datagram asli.</p>
+          </div>
+          <p class="muted" style="margin-top:14px">Dalam desain jaringan modern, rute biasanya dikelola terpusat dan host umumnya tidak perlu belajar rute dari pesan Redirect. Karena itu, penerimaan Redirect sering dinonaktifkan pada endpoint.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="simulasi" aria-labelledby="sim-title">
+      <div class="section-heading">
+        <p class="section-tag">Bagian C · Mekanisme dan simulasi</p>
+        <h2 id="sim-title">Bagaimana rute host dapat dialihkan?</h2>
+        <p class="lead">Pilih langkah atau gunakan kontrol pemutaran. Panel samping menunjukkan perubahan rute korban pada setiap tahap.</p>
+      </div>
+
+      <div class="sim-shell">
+        <div class="panel diagram-card">
+          <div class="diagram-top">
+            <div>
+              <h3>Topologi ilustratif</h3>
+              <p>Alamat memakai blok dokumentasi RFC 5737; tidak mewakili jaringan nyata.</p>
+            </div>
+            <span class="mini-label">Subnet korban: 192.0.2.0/24</span>
+          </div>
+          <svg class="diagram" viewBox="0 0 760 330" role="img" aria-labelledby="diagram-title diagram-desc">
+            <title id="diagram-title">Topologi simulasi ICMP Redirect</title>
+            <desc id="diagram-desc">Host korban dan gateway asli berada di subnet yang sama dengan attacker. Gateway menghubungkan subnet ke tujuan di internet.</desc>
+            <defs>
+              <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#70a9ff"/></marker>
+              <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ff8291"/></marker>
+              <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ffd166"/></marker>
+            </defs>
+            <path id="path-original" class="link active" d="M210 155 C246 155 258 238 300 238" marker-end="url(#arrow-blue)"/>
+            <path id="path-internet" class="link active" d="M468 238 C525 238 546 166 601 166" marker-end="url(#arrow-blue)"/>
+            <path id="path-redirect" class="link redirect" d="M300 88 C265 88 250 133 210 139" marker-end="url(#arrow-red)"/>
+            <path id="path-host-attacker" class="link rerouted" d="M210 172 C246 172 260 107 300 107" marker-end="url(#arrow-amber)"/>
+            <path id="path-attacker-gateway" class="link rerouted" d="M384 134 C384 161 384 181 384 202" marker-end="url(#arrow-amber)"/>
+            <text id="label-original" class="edge-label" x="222" y="221">paket awal</text>
+            <text id="label-redirect" class="edge-label label-red" x="214" y="94" opacity="0">Redirect Type 5</text>
+            <text id="label-reroute" class="edge-label label-amber" x="216" y="185" opacity="0">rute korban</text>
+            <g class="node host">
+              <rect x="34" y="122" width="176" height="66" rx="14"/>
+              <text class="title" x="52" y="148">Host korban</text>
+              <text class="ip" x="52" y="170">192.0.2.25</text>
+            </g>
+            <g class="node attacker">
+              <rect x="300" y="55" width="168" height="66" rx="14"/>
+              <text class="title" x="318" y="81">Attacker</text>
+              <text class="ip" x="318" y="103">192.0.2.66 · satu subnet</text>
+            </g>
+            <g class="node">
+              <rect x="300" y="205" width="168" height="66" rx="14"/>
+              <text class="title" x="318" y="231">Gateway asli</text>
+              <text class="ip" x="318" y="253">192.0.2.1</text>
+            </g>
+            <g class="node internet">
+              <rect x="601" y="133" width="130" height="66" rx="14"/>
+              <text class="title" x="619" y="159">Tujuan /</text>
+              <text class="title" x="619" y="178">Internet</text>
+              <text class="ip" x="619" y="193">198.51.100.80</text>
+            </g>
+            <text class="edge-label" x="292" y="298">Segmen lokal / subnet yang sama</text>
+          </svg>
+          <div class="legend" aria-label="Legenda diagram">
+            <span><i></i> jalur lewat gateway asli</span>
+            <span><i class="fake"></i> pesan Redirect palsu</span>
+            <span><i class="new-route"></i> rute setelah berubah</span>
+          </div>
+          <p class="subnet-note">Skema serangan mengasumsikan host menerima dan mempercayai pesan tersebut. Implementasi dapat menolak Redirect yang tidak memenuhi validasi rute atau kebijakan lokal.</p>
+        </div>
+
+        <aside class="panel step-panel" aria-live="polite" aria-label="Langkah simulasi dan routing table korban">
+          <span id="step-count" class="step-count">Langkah 1 dari 4</span>
+          <h3 id="step-title">Paket menuju gateway asli</h3>
+          <p id="step-description" class="step-description">Korban ingin menghubungi tujuan di luar subnet, lalu mengirim paket melalui default gateway 192.0.2.1.</p>
+          <p class="route-title">Routing table korban</p>
+          <table class="route-table">
+            <thead><tr><th>Tujuan</th><th>Next-hop</th><th>Status</th></tr></thead>
+            <tbody id="route-body">
+              <tr><td>198.51.100.80/32</td><td>192.0.2.1</td><td>Default route</td></tr>
+            </tbody>
+          </table>
+          <p id="route-state" class="route-state">Rute normal: melalui gateway asli</p>
+          <div class="controls" aria-label="Kontrol animasi">
+            <button id="back-btn" class="control" type="button" aria-label="Langkah sebelumnya">← Back</button>
+            <button id="next-btn" class="control primary" type="button" aria-label="Langkah berikutnya">Next →</button>
+            <button id="play-btn" class="control" type="button">▶ Play</button>
+            <button id="pause-btn" class="control" type="button" disabled>Ⅱ Pause</button>
+            <button id="replay-btn" class="control" type="button">↺ Replay</button>
+          </div>
+        </aside>
+      </div>
+      <p class="sim-disclaimer"><strong>Catatan dampak:</strong> alur melalui attacker membuka peluang pengamatan atau perubahan trafik yang tidak terenkripsi; MITM tidak otomatis berarti seluruh isi aplikasi terbaca. TLS yang tervalidasi tetap melindungi konten aplikasi, meskipun pengalihan dapat mengganggu koneksi atau metadata jaringan tetap terlihat.</p>
+    </section>
+
+    <section id="paket" aria-labelledby="packet-title">
+      <div class="section-heading">
+        <p class="section-tag">Membaca struktur paket</p>
+        <h2 id="packet-title">Bagian ICMP Redirect</h2>
+        <p class="lead">Arahkan kursor, fokus dengan keyboard, atau klik salah satu field untuk membaca fungsinya.</p>
+      </div>
+      <div class="panel packet-card">
+        <div class="packet-layout" role="group" aria-label="Field dalam pesan ICMP Redirect">
+          <button class="packet-field" type="button" data-title="Type" data-info="Nilainya 5 untuk ICMP Redirect pada ICMPv4. Type memilih format dan makna pesan ICMP." aria-pressed="true">
+            <span class="field-name">Type</span><span class="field-width">8 bit · nilai 5</span>
+          </button>
+          <button class="packet-field" type="button" data-title="Code" data-info="Menentukan cakupan redirect: 0 Network, 1 Host, 2 Type of Service + Network, atau 3 Type of Service + Host." aria-pressed="false">
+            <span class="field-name">Code</span><span class="field-width">8 bit · nilai 0–3</span>
+          </button>
+          <button class="packet-field" type="button" data-title="Checksum" data-info="Checksum 16-bit untuk memeriksa integritas pesan ICMP. Checksum bukan autentikasi: ia tidak membuktikan siapa pengirimnya." aria-pressed="false">
+            <span class="field-name">Checksum</span><span class="field-width">16 bit</span>
+          </button>
+          <button class="packet-field" type="button" data-title="Gateway Address" data-info="Alamat IP gateway yang disarankan sebagai next-hop untuk tujuan pada datagram asli. Secara sah, gateway yang disarankan semestinya terjangkau langsung pada jaringan lokal host." aria-pressed="false">
+            <span class="field-name">Gateway Address</span><span class="field-width">32 bit · IPv4</span>
+          </button>
+          <button class="packet-field wide" type="button" data-title="Header IP asli + data awal" data-info="Berisi header IP dan 64 bit pertama dari data datagram yang memicu pesan, agar host dapat mencocokkan Redirect dengan trafik terkait." aria-pressed="false">
+            <span class="field-name">Header IP asli + 64 bit data awal</span><span class="field-width">panjang mengikuti header IP</span>
+          </button>
+          <button class="packet-field wide" type="button" data-title="Header IPv4 luar" data-info="ICMP sendiri dibawa di dalam datagram IP. Alamat sumber pada header IP luar adalah bagian dari validasi host, tetapi tidak memberi autentikasi kriptografis." aria-pressed="false">
+            <span class="field-name">Header IPv4 luar</span><span class="field-width">pembungkus IP · bukan field ICMP</span>
+          </button>
+        </div>
+        <p id="field-explainer" class="field-explainer" aria-live="polite"><strong>Type:</strong> Nilainya 5 untuk ICMP Redirect pada ICMPv4. Type memilih format dan makna pesan ICMP.</p>
+        <p class="packet-note">Diagram bersifat konseptual dan tidak menggambarkan ukuran header IP luar. ICMP Redirect tidak mempunyai mekanisme autentikasi kriptografis pada format dasarnya.</p>
+      </div>
+    </section>
+
+    <section id="perbandingan" aria-labelledby="compare-title">
+      <div class="section-heading">
+        <p class="section-tag">Jangan tertukar</p>
+        <h2 id="compare-title">Redirect ≠ ARP spoofing ≠ ICMP Flood</h2>
+      </div>
+      <div class="compare-wrap">
+        <table class="compare">
+          <thead>
+            <tr><th>Teknik</th><th>Layer / protokol</th><th>Tujuan</th><th>Cara kerja (ringkas)</th><th>Dampak utama</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ICMP Redirect</td><td>Layer jaringan · ICMPv4 / IP</td><td>Mengubah next-hop host untuk tujuan/jaringan</td><td>Host menerima pesan Redirect berisi gateway yang disarankan</td><td>Pengalihan rute; dapat membuka peluang MITM atau gangguan konektivitas</td></tr>
+            <tr><td>ARP spoofing</td><td>Link layer · ARP pada LAN IPv4</td><td>Mengubah pemetaan IP-ke-MAC pada cache ARP</td><td>Korban menerima pemetaan IP/MAC palsu</td><td>Frame lokal dapat lewat perangkat penyerang; dapat disadap atau terganggu</td></tr>
+            <tr><td>ICMP Flood</td><td>Layer jaringan · volume paket ICMP</td><td>Menghabiskan kapasitas/bandwidth, biasanya untuk DoS</td><td>Target dibanjiri paket ICMP dalam jumlah besar</td><td>Degradasi layanan atau sumber daya; tidak berfokus mengubah rute</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="risiko" aria-labelledby="risk-title">
+      <div class="section-heading">
+        <p class="section-tag">Mengapa bisa terjadi?</p>
+        <h2 id="risk-title">Kepercayaan tanpa autentikasi kuat</h2>
+        <p class="lead">ICMP dirancang sebagai protokol kontrol yang ringan. Format Redirect klasik tidak menandatangani pesan dan tidak membuktikan identitas gateway secara kriptografis.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card risk-card">
+          <span class="risk-badge">Risiko protokol dan konfigurasi</span>
+          <h3>Validasi bukan autentikasi</h3>
+          <p class="muted">Checksum hanya mendeteksi kerusakan data, bukan pemalsuan sumber. RFC host/router menetapkan pemeriksaan konteks (misalnya relasi gateway, jaringan, dan tujuan); kualitas penerapan dan kebijakan OS menentukan apakah pesan diterima. Jika host menerima pesan palsu atau terlalu mempercayai asalnya, cache rute dapat berubah.</p>
+        </article>
+        <article class="card">
+          <span class="mini-label">Faktor yang memperbesar risiko</span>
+          <h3 style="margin-top:8px">Paparan Layer 2 dan kebijakan host</h3>
+          <ul class="check-list">
+            <li>Attacker dapat mengirim trafik pada segmen lokal korban.</li>
+            <li>Host mengaktifkan penerimaan ICMP Redirect atau kebijakan validasinya lemah.</li>
+            <li>Segmen jaringan tidak membatasi perangkat dan pesan kontrol yang dapat masuk.</li>
+            <li>Rute dinamis pada endpoint tidak dipantau atau tidak sesuai kebutuhan.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section id="mitigasi" aria-labelledby="mitigation-title">
+      <div class="section-heading">
+        <p class="section-tag">Countermeasure</p>
+        <h2 id="mitigation-title">Kurangi penerimaan dan deteksi perubahan rute</h2>
+        <p class="lead">Terapkan kebijakan berdasarkan peran host/router dan uji dampaknya di lingkungan terkelola sebelum peluncuran luas.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Linux · nonaktifkan ICMP Redirect di host</h3>
+          <p class="muted">Sysctl kernel Linux memakai <span class="code">net.ipv4.conf.*.accept_redirects</span>. Untuk host biasa, tetapkan nilai 0 secara eksplisit; cakupan <code class="code">all</code>, <code class="code">default</code>, dan interface yang sudah ada perlu diperhatikan.</p>
+          <div class="config-block">
+            <div class="config-head"><span>Contoh persisten: /etc/sysctl.d/90-disable-icmp-redirects.conf</span><span>IPv4</span></div>
+            <pre><code>net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.eth0.accept_redirects = 0</code></pre>
+            <p class="config-foot">Ganti <code class="code">eth0</code> dengan nama interface yang benar. Terapkan dengan <code class="code">sudo sysctl --system</code>, lalu verifikasi nilai untuk <code class="code">all</code>, <code class="code">default</code>, dan interface aktif. Perubahan spesifik versi/distribusi sebaiknya diuji.</p>
+          </div>
+          <div class="warning-note">Dokumentasi kernel menyatakan nilai fungsional bergantung pada forwarding dan kombinasi <code class="code">conf/all</code> serta per-interface. Default yang dijelaskan: <strong>TRUE (host)</strong>, <strong>FALSE (router)</strong>; jangan bergantung pada default untuk endpoint yang harus menolak Redirect.</div>
+        </article>
+        <article class="card">
+          <h3>Windows · matikan ICMP Redirect IPv4</h3>
+          <p class="muted">Jalankan terminal administratif. Sintaks <code class="code">icmpredirects=enabled|disabled</code> tersedia pada konteks <code class="code">netsh interface ipv4 set global</code>.</p>
+          <div class="config-block">
+            <div class="config-head"><span>Command Prompt / PowerShell (Run as administrator)</span><span>IPv4</span></div>
+            <pre><code>netsh interface ipv4 set global icmpredirects=disabled
+netsh interface ipv4 show global</code></pre>
+            <p class="config-foot">Baris kedua membantu memeriksa konfigurasi aktif. Perubahan harus diuji pada versi Windows dan kebijakan organisasi yang digunakan.</p>
+          </div>
+          <div class="warning-note">Referensi Microsoft yang ditemukan mendokumentasikan opsi nilai untuk perintah ini, tetapi tidak menetapkan satu nilai default lintas versi/konfigurasi. Karena itu, periksa keadaan aktual dengan <code class="code">show global</code>; default Windows tidak diasumsikan di halaman ini.</div>
+        </article>
+      </div>
+      <div class="grid-3" style="margin-top:14px">
+        <article class="card">
+          <h3>Filter secara terukur</h3>
+          <p class="muted">Batasi ICMP Type 5 pada host atau batas jaringan sesuai kebijakan. Bila fungsi Redirect memang diperlukan, izinkan hanya dari jalur/gateway yang diharapkan; hindari pemblokiran membabi buta yang menutupi kebutuhan operasional.</p>
+        </article>
+        <article class="card">
+          <h3>Segmentasi jaringan</h3>
+          <p class="muted">Pisahkan pengguna, server, dan perangkat yang tidak tepercaya; minimalkan perangkat yang dapat mengirim pesan kontrol ke endpoint. Terapkan kontrol akses pada switch/router.</p>
+        </article>
+        <article class="card">
+          <h3>IDS dan monitoring</h3>
+          <p class="muted">Pantau ICMP Type 5 yang tidak diharapkan, perubahan route/cache, sumber Redirect yang bukan gateway terotorisasi, dan anomali arus trafik. Kaitkan alert dengan baseline jaringan.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="batasan" aria-labelledby="limits-title">
+      <div class="section-heading">
+        <p class="section-tag">Bagian E · Batasan dan kehati-hatian</p>
+        <h2 id="limits-title">Apa yang simulasi ini tidak klaim</h2>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Hasilnya bergantung pada implementasi</h3>
+          <p class="muted">Animasi menyederhanakan kondisi ketika Redirect diterima. Host dapat memvalidasi sumber dan rute, menolak pesan, atau tidak menyimpan rute sesuai kebijakan dan implementasi. Perubahan konfigurasi juga dapat memengaruhi desain routing tertentu.</p>
+        </article>
+        <article class="card">
+          <h3>MITM bukan berarti dekripsi otomatis</h3>
+          <p class="muted">Pengalihan memberi peluang berada pada jalur trafik, bukan otomatis membuka konten terenkripsi. TLS dengan validasi sertifikat yang benar melindungi konten aplikasi; tetap tinjau metadata, ketersediaan layanan, dan risiko konfigurasi/proxy yang lemah.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="referensi" aria-labelledby="refs-title">
+      <div class="section-heading">
+        <p class="section-tag">Bagian D · Referensi</p>
+        <h2 id="refs-title">Sumber primer dan dokumentasi resmi</h2>
+        <p class="lead">Rujukan protokol dan konfigurasi OS yang digunakan untuk isi teknis halaman ini.</p>
+      </div>
+      <ul class="refs">
+        <li>
+          <strong>RFC 792</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc792">Internet Control Message Protocol</a><p>Format ICMP Redirect, Type 5, kode 0–3, Gateway Internet Address, header IP asli + 64 bit data, dan penjelasan fungsi sah Redirect.</p></div>
+        </li>
+        <li>
+          <strong>RFC 1122</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc1122">Requirements for Internet Hosts — Communication Layers</a><p>Persyaratan host untuk ICMP Redirect, termasuk pemeriksaan konteks dan perilaku host. Lihat bagian 3.2.2.2.</p></div>
+        </li>
+        <li>
+          <strong>RFC 1812</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc1812">Requirements for IP Version 4 Routers</a><p>Persyaratan router IPv4 terkait pembuatan dan pengiriman ICMP Redirect; berguna untuk konteks peran gateway.</p></div>
+        </li>
+        <li>
+          <strong>Linux</strong>
+          <div><a href="https://docs.kernel.org/networking/ip-sysctl.html">Dokumentasi kernel Linux: IP Sysctl</a><p>Definisi <code class="code">accept_redirects</code>, hubungan nilai global/interface dengan forwarding, serta default fungsional host/router.</p></div>
+        </li>
+        <li>
+          <strong>Microsoft</strong>
+          <div><a href="https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/netsh-interface">Microsoft Learn: netsh interface</a><p>Referensi sintaks untuk <code class="code">netsh interface ipv4 set global</code>, opsi <code class="code">icmpredirects</code>, dan <code class="code">show global</code>. Nilai default tidak ditetapkan di referensi tersebut, jadi periksa konfigurasi aktual.</p></div>
+        </li>
+        <li>
+          <strong>Alamat demo</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc5737">RFC 5737: IPv4 Address Blocks Reserved for Documentation</a><p>Alamat 192.0.2.0/24 dan 198.51.100.0/24 pada diagram adalah alamat dokumentasi.</p></div>
+        </li>
+      </ul>
+    </section>
+
+    <section id="kuis" aria-labelledby="quiz-title">
+      <div class="section-heading">
+        <p class="section-tag">Cek pemahaman</p>
+        <h2 id="quiz-title">Kuis singkat</h2>
+        <p class="lead">Pilih satu jawaban pada setiap soal, lalu periksa hasilnya.</p>
+      </div>
+      <form id="quiz-form" class="quiz">
+        <fieldset class="panel question">
+          <legend>1. Apa fungsi sah ICMP Type 5?</legend>
+          <div class="answers">
+            <label><input type="radio" name="q1" value="a"> Membanjiri host dengan paket echo</label>
+            <label><input type="radio" name="q1" value="b"> Memberi tahu host tentang gateway lebih baik pada subnet yang sama</label>
+            <label><input type="radio" name="q1" value="c"> Memetakan alamat IP ke MAC</label>
+          </div>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>2. Code 3 pada ICMP Redirect berarti…</legend>
+          <div class="answers">
+            <label><input type="radio" name="q2" value="a"> Redirect untuk host</label>
+            <label><input type="radio" name="q2" value="b"> Redirect untuk Type of Service dan network</label>
+            <label><input type="radio" name="q2" value="c"> Redirect untuk Type of Service dan host</label>
+          </div>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>3. Mengapa checksum ICMP tidak mencegah pemalsuan sumber?</legend>
+          <div class="answers">
+            <label><input type="radio" name="q3" value="a"> Checksum hanya memeriksa integritas, bukan autentikasi identitas</label>
+            <label><input type="radio" name="q3" value="b"> Checksum hanya digunakan oleh ARP</label>
+            <label><input type="radio" name="q3" value="c"> ICMP tidak memiliki checksum</label>
+          </div>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>4. Perbedaan utama ICMP Redirect dan ARP spoofing adalah…</legend>
+          <div class="answers">
+            <label><input type="radio" name="q4" value="a"> Redirect mengubah next-hop; ARP spoofing memalsukan pemetaan IP-ke-MAC</label>
+            <label><input type="radio" name="q4" value="b"> Keduanya selalu merupakan serangan DoS volumetrik</label>
+            <label><input type="radio" name="q4" value="c"> ARP spoofing bekerja melalui DNS</label>
+          </div>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>5. Praktik defensif host Linux yang disarankan pada materi ini adalah…</legend>
+          <div class="answers">
+            <label><input type="radio" name="q5" value="a"> Mengatur <code class="code">accept_redirects</code> menjadi 1 di semua interface</label>
+            <label><input type="radio" name="q5" value="b"> Mengatur <code class="code">accept_redirects</code> menjadi 0 dan memverifikasi cakupan interface</label>
+            <label><input type="radio" name="q5" value="c"> Menghapus semua rute default</label>
+          </div>
+        </fieldset>
+        <div class="quiz-actions">
+          <button class="control primary" type="submit">Periksa jawaban</button>
+          <button id="reset-quiz" class="control" type="reset">Ulangi kuis</button>
+          <p id="quiz-result" aria-live="polite" role="status">Skor akan muncul di sini.</p>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <span>Materi pembelajaran keamanan jaringan · fokus defensif</span>
+      <a href="#atas">Kembali ke atas ↑</a>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const steps = [
+        {
+          title: "Paket menuju gateway asli",
+          description: "Korban ingin menghubungi tujuan di luar subnet, lalu mengirim paket melalui default gateway 192.0.2.1.",
+          route: "192.0.2.1",
+          status: "Default route",
+          state: "Rute normal: melalui gateway asli",
+          redirected: false
+        },
+        {
+          title: "Redirect palsu diterima",
+          description: "Attacker pada subnet yang sama mengirim pesan yang seolah berasal dari gateway asli. Jika lolos validasi host, pesan ini menyarankan next-hop baru.",
+          route: "192.0.2.1",
+          status: "Belum berubah",
+          state: "Pesan diterima; rute belum berubah",
+          redirected: false
+        },
+        {
+          title: "Rute host berubah",
+          description: "Dalam skenario ketika host menerima pesan, rute untuk tujuan tersebut kini menunjuk ke gateway yang disarankan: 192.0.2.66.",
+          route: "192.0.2.66",
+          status: "Rute spesifik",
+          state: "Next-hop berubah ke perangkat yang tidak tepercaya",
+          redirected: true
+        },
+        {
+          title: "Trafik melewati attacker",
+          description: "Paket korban menuju tujuan melewati perangkat attacker terlebih dahulu. Perangkat itu berpotensi mengamati atau mengganggu trafik sebelum diteruskan.",
+          route: "192.0.2.66",
+          status: "Rute spesifik",
+          state: "Jalur baru: korban → attacker → gateway",
+          redirected: true
+        }
+      ];
+      let stepIndex = 0;
+      let playback = null;
+      const $ = (selector) => document.querySelector(selector);
+      const routeBody = $("#route-body");
+      const backButton = $("#back-btn");
+      const nextButton = $("#next-btn");
+      const playButton = $("#play-btn");
+      const pauseButton = $("#pause-btn");
+
+      function renderStep() {
+        const step = steps[stepIndex];
+        $("#step-count").textContent = `Langkah ${stepIndex + 1} dari ${steps.length}`;
+        $("#step-title").textContent = step.title;
+        $("#step-description").textContent = step.description;
+        routeBody.innerHTML = `<tr><td>198.51.100.80/32</td><td>${step.route}</td><td>${step.status}</td></tr>`;
+        $("#route-state").textContent = step.state;
+        $("#route-state").classList.toggle("changed", step.redirected);
+        backButton.disabled = stepIndex === 0;
+        nextButton.disabled = stepIndex === steps.length - 1;
+
+        $("#path-original").classList.toggle("active", stepIndex <= 1);
+        $("#path-internet").classList.toggle("active", stepIndex <= 1 || stepIndex === 3);
+        $("#path-redirect").style.opacity = stepIndex === 1 ? "1" : "0";
+        $("#path-host-attacker").classList.toggle("active", stepIndex >= 2);
+        $("#path-attacker-gateway").classList.toggle("active", stepIndex >= 2);
+        $("#path-host-attacker").classList.toggle("rerouted", stepIndex >= 2);
+        $("#path-attacker-gateway").classList.toggle("rerouted", stepIndex >= 2);
+        $("#label-redirect").setAttribute("opacity", stepIndex === 1 ? "1" : "0");
+        $("#label-reroute").setAttribute("opacity", stepIndex >= 2 ? "1" : "0");
+      }
+
+      function stopPlayback() {
+        if (playback !== null) {
+          window.clearInterval(playback);
+          playback = null;
+        }
+        playButton.disabled = false;
+        pauseButton.disabled = true;
+      }
+
+      function advance() {
+        if (stepIndex < steps.length - 1) {
+          stepIndex += 1;
+          renderStep();
+        } else {
+          stopPlayback();
+        }
+      }
+
+      backButton.addEventListener("click", () => {
+        stopPlayback();
+        stepIndex = Math.max(0, stepIndex - 1);
+        renderStep();
+      });
+      nextButton.addEventListener("click", () => {
+        stopPlayback();
+        advance();
+      });
+      playButton.addEventListener("click", () => {
+        if (playback !== null) return;
+        if (stepIndex === steps.length - 1) stepIndex = 0;
+        renderStep();
+        playButton.disabled = true;
+        pauseButton.disabled = false;
+        playback = window.setInterval(advance, 2200);
+      });
+      pauseButton.addEventListener("click", stopPlayback);
+      $("#replay-btn").addEventListener("click", () => {
+        stopPlayback();
+        stepIndex = 0;
+        renderStep();
+        playButton.click();
+      });
+
+      const fields = document.querySelectorAll(".packet-field");
+      function explainField(field) {
+        fields.forEach((item) => item.setAttribute("aria-pressed", String(item === field)));
+        $("#field-explainer").innerHTML = `<strong>${field.dataset.title}:</strong> ${field.dataset.info}`;
+      }
+      fields.forEach((field) => {
+        field.addEventListener("mouseenter", () => explainField(field));
+        field.addEventListener("focus", () => explainField(field));
+        field.addEventListener("click", () => explainField(field));
+      });
+
+      const answerKey = { q1: "b", q2: "c", q3: "a", q4: "a", q5: "b" };
+      $("#quiz-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        let score = 0;
+        const unanswered = [];
+        Object.entries(answerKey).forEach(([name, answer]) => {
+          const chosen = document.querySelector(`input[name="${name}"]:checked`);
+          if (!chosen) unanswered.push(name.slice(1));
+          else if (chosen.value === answer) score += 1;
+        });
+        const result = $("#quiz-result");
+        if (unanswered.length) {
+          result.className = "needs-work";
+          result.textContent = `Lengkapi semua soal terlebih dahulu. Belum dijawab: ${unanswered.join(", ")}.`;
+          return;
+        }
+        result.className = score >= 4 ? "good" : "needs-work";
+        result.textContent = `Skor: ${score}/5. ${score === 5 ? "Sempurna—bagus!" : score >= 4 ? "Hampir sempurna, tinjau kembali bagian yang terlewat." : "Tinjau kembali konsep dan mitigasi, lalu coba lagi."}`;
+      });
+      $("#reset-quiz").addEventListener("click", () => {
+        $("#quiz-result").className = "";
+        $("#quiz-result").textContent = "Skor akan muncul di sini.";
+      });
+
+      renderStep();
+    })();
+  </script>
+</body>
+</html>

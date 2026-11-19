@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Materi edukasi defensif tentang perkembangan generasi teknologi firewall, inspeksi paket, kebijakan, dan keterbatasannya.">
+  <title>Generasi Teknologi Firewall</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #101f32;
+      --panel-2: #14263c;
+      --line: #2a405a;
+      --text: #edf5ff;
+      --muted: #a9bbd0;
+      --cyan: #66e3dc;
+      --blue: #70a9ff;
+      --amber: #ffd166;
+      --red: #ff8291;
+      --green: #8be0ad;
+      --radius: 18px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        color-scheme: light;
+        --bg: #f3f7fb;
+        --panel: #ffffff;
+        --panel-2: #eaf1f8;
+        --line: #c5d2df;
+        --text: #17283b;
+        --muted: #4c6075;
+        --cyan: #087e83;
+        --blue: #1762b0;
+        --amber: #875600;
+        --red: #b4233b;
+        --green: #167443;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(ellipse at 10% 5%, color-mix(in srgb, var(--cyan) 9%, transparent), transparent 36rem),
+        radial-gradient(ellipse at 95% 22%, color-mix(in srgb, var(--blue) 8%, transparent), transparent 34rem),
+        var(--bg);
+      line-height: 1.65;
+    }
+    a { color: var(--cyan); }
+    a:hover { color: var(--text); }
+    button, summary, select { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, a:focus-visible, summary:focus-visible, select:focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 3px;
+    }
+    .wrap { width: min(1120px, calc(100% - 36px)); margin-inline: auto; }
+    .topbar { padding: 18px 0; border-bottom: 1px solid color-mix(in srgb, var(--muted) 14%, transparent); }
+    .topbar-inner { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-size: .9rem; font-weight: 750; letter-spacing: .04em; }
+    .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: var(--bg); background: var(--cyan); font-weight: 900; }
+    .nav { display: flex; flex-wrap: wrap; gap: 18px; font-size: .87rem; }
+    .nav a { color: var(--muted); text-decoration: none; }
+    .nav a:hover, .nav a[aria-current="page"] { color: var(--text); }
+    .nav-note { margin: 7px 0 0; color: var(--muted); font-size: .72rem; text-align: right; }
+    .hero { padding: 64px 0 38px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 6px 11px; border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent); border-radius: 999px; color: var(--cyan); background: color-mix(in srgb, var(--cyan) 7%, transparent); font-size: .78rem; font-weight: 750; letter-spacing: .09em; text-transform: uppercase; }
+    .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    h1 { max-width: 900px; margin: 20px 0 16px; font-size: clamp(2.4rem, 7vw, 4.7rem); line-height: 1.04; letter-spacing: -.055em; }
+    h1 span { color: var(--cyan); }
+    .hero-copy { max-width: 780px; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.2rem); }
+    .hero-note { display: flex; gap: 12px; align-items: flex-start; max-width: 830px; margin-top: 21px; padding: 14px 16px; border-left: 3px solid var(--amber); border-radius: 0 12px 12px 0; color: var(--text); background: color-mix(in srgb, var(--amber) 8%, transparent); font-size: .94rem; }
+    main { padding-bottom: 60px; }
+    section { padding: 38px 0; scroll-margin-top: 18px; }
+    .section-heading { max-width: 790px; margin-bottom: 22px; }
+    .section-tag { margin: 0 0 6px; color: var(--cyan); font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin: 0 0 9px; font-size: clamp(1.8rem, 4vw, 2.65rem); line-height: 1.14; letter-spacing: -.035em; }
+    h3 { margin: 0 0 8px; font-size: 1.07rem; }
+    p { margin: 0 0 14px; }
+    .lead { color: var(--muted); font-size: 1.05rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card, .panel { border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(145deg, color-mix(in srgb, var(--panel-2) 92%, transparent), color-mix(in srgb, var(--panel) 96%, transparent)); }
+    .card { padding: 21px; }
+    .card p:last-child { margin-bottom: 0; }
+    .muted, .card p, .panel p { color: var(--muted); }
+    .mini-label { color: var(--muted); font-size: .77rem; text-transform: uppercase; letter-spacing: .08em; }
+    .code { display: inline-block; max-width: 100%; overflow-wrap: anywhere; padding: 2px 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--text); background: var(--bg); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; }
+    .quick-card { position: relative; padding-top: 52px; }
+    .quick-number { position: absolute; top: 17px; left: 20px; color: var(--cyan); font-size: .76rem; font-weight: 850; letter-spacing: .1em; }
+    .purpose { display: flex; gap: 13px; padding: 17px; border: 1px solid color-mix(in srgb, var(--green) 28%, transparent); border-radius: 14px; background: color-mix(in srgb, var(--green) 6%, transparent); }
+    .purpose-mark { color: var(--green); font-size: 1.25rem; line-height: 1.3; }
+    .purpose strong { color: var(--text); }
+    .type-list, .check-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+    .type-list li { display: grid; grid-template-columns: 105px 1fr; gap: 10px; color: var(--muted); }
+    .type-list strong { color: var(--text); }
+    .check-list li { display: grid; grid-template-columns: 23px 1fr; gap: 8px; color: var(--muted); }
+    .check-list li::before { content: "✓"; color: var(--green); font-weight: 900; }
+    .timeline-wrap { overflow-x: auto; padding: 8px 0 14px; }
+    .timeline { display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); min-width: 830px; gap: 0; position: relative; }
+    .timeline::before { position: absolute; top: 22px; right: 7%; left: 7%; height: 2px; content: ""; background: var(--line); }
+    .generation-tab { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 9px 10px; border: 0; color: var(--muted); background: transparent; text-align: center; cursor: pointer; }
+    .generation-tab:hover, .generation-tab[aria-selected="true"] { color: var(--text); }
+    .generation-tab[aria-selected="true"] .timeline-dot { border-color: var(--cyan); color: var(--bg); background: var(--cyan); box-shadow: 0 0 0 5px color-mix(in srgb, var(--cyan) 15%, transparent); }
+    .timeline-dot { display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid var(--line); border-radius: 50%; color: var(--muted); background: var(--panel); font-weight: 850; transition: .2s; }
+    .timeline-title { max-width: 185px; font-size: .88rem; font-weight: 750; line-height: 1.3; }
+    .timeline-sub { font-size: .74rem; }
+    .generation-detail { padding: 20px; }
+    .detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .detail-kicker { color: var(--cyan); font-size: .75rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .detail-name { margin: 5px 0 7px; font-size: 1.4rem; }
+    .detail-os { flex: 0 0 auto; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--blue); font-size: .78rem; font-weight: 750; }
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; margin-top: 13px; }
+    .detail-cell { padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: color-mix(in srgb, var(--bg) 62%, transparent); }
+    .detail-cell h4 { margin: 0 0 5px; font-size: .82rem; }
+    .detail-cell p { margin: 0; font-size: .85rem; }
+    .detail-cell.good h4 { color: var(--green); }
+    .detail-cell.caution h4 { color: var(--amber); }
+    .detail-cell.stop h4 { color: var(--red); }
+    .osi-shell { display: grid; grid-template-columns: minmax(250px, .75fr) minmax(0, 1.35fr); gap: 16px; align-items: stretch; }
+    .osi-card { padding: 18px; }
+    .osi-diagram { display: grid; gap: 5px; margin-top: 12px; }
+    .osi-layer { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 9px; min-height: 34px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: var(--bg); font-size: .78rem; transition: .2s; }
+    .osi-layer .layer-number { color: var(--muted); font-family: ui-monospace, monospace; }
+    .osi-layer .inspect-mark { color: var(--green); font-size: .7rem; font-weight: 800; opacity: 0; }
+    .osi-layer.inspected { border-color: var(--green); color: var(--text); background: color-mix(in srgb, var(--green) 9%, var(--panel)); }
+    .osi-layer.inspected .inspect-mark { opacity: 1; }
+    .osi-note { margin-top: 12px; font-size: .78rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .control { padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--text); background: var(--panel-2); cursor: pointer; }
+    .control:hover { border-color: var(--cyan); }
+    .control.primary { color: var(--bg); border-color: var(--cyan); background: var(--cyan); font-weight: 800; }
+    .control:disabled { cursor: not-allowed; opacity: .55; }
+    .scenario-select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; color: var(--text); background: var(--bg); }
+    .sim-shell { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(285px, .9fr); gap: 16px; align-items: stretch; }
+    .diagram-card { overflow: hidden; }
+    .diagram-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 20px 20px 0; }
+    .diagram-top p { color: var(--muted); font-size: .86rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 0 20px 14px; color: var(--muted); font-size: .76rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .legend i { width: 18px; height: 3px; border-radius: 3px; background: #8997a8; }
+    .legend .attack { background: var(--red); }
+    .legend .victim-key { background: var(--blue); }
+    .legend .defense { background: var(--green); }
+    .diagram { display: block; width: 100%; height: auto; }
+    .diagram .link { fill: none; stroke: #8997a8; stroke-width: 3; stroke-dasharray: 6 7; opacity: .3; transition: opacity .25s, stroke .25s; }
+    .diagram .link.active { stroke: var(--blue); stroke-dasharray: none; opacity: 1; }
+    .diagram .link.blocked { stroke: var(--red); stroke-dasharray: 7 6; opacity: 1; }
+    .diagram .node rect { fill: var(--panel-2); stroke: var(--line); stroke-width: 1.5; }
+    .diagram .node text { fill: var(--text); font-family: system-ui, sans-serif; }
+    .diagram .node .sub { fill: var(--muted); font-size: 12px; }
+    .diagram .node .title { font-size: 15px; font-weight: 750; }
+    .diagram .attacker rect { stroke: var(--red); }
+    .diagram .victim rect { stroke: var(--blue); }
+    .diagram .defense rect { stroke: var(--green); }
+    .diagram .neutral-node rect { stroke: #8997a8; }
+    .diagram .edge-label { fill: var(--muted); font-family: system-ui, sans-serif; font-size: 11px; }
+    .diagram .packet { opacity: 0; }
+    .step-panel { display: flex; flex-direction: column; padding: 20px; }
+    .step-count { color: var(--cyan); font-size: .78rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .step-panel h3 { margin: 8px 0 7px; font-size: 1.25rem; }
+    .step-description { min-height: 110px; font-size: .91rem; }
+    .decision { margin: 4px 0 13px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+    .decision strong { display: flex; align-items: center; gap: 8px; font-size: 1rem; }
+    .decision strong::before { width: 10px; height: 10px; border-radius: 50%; content: ""; background: var(--amber); }
+    .decision.allow strong { color: var(--green); }
+    .decision.allow strong::before { background: var(--green); }
+    .decision.deny strong { color: var(--red); }
+    .decision.deny strong::before { background: var(--red); }
+    .decision p { margin: 5px 0 0; font-size: .82rem; }
+    .controls[aria-label="Kontrol animasi"] { margin-top: auto; }
+    .compare-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    .compare-table { width: 100%; min-width: 870px; border-collapse: collapse; }
+    .compare-table th, .compare-table td { padding: 11px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .compare-table th { color: var(--muted); font-size: .78rem; }
+    .compare-table td { color: var(--muted); font-size: .84rem; }
+    .compare-table td:first-child { color: var(--text); font-weight: 750; }
+    .compare-table tr:last-child td { border-bottom: 0; }
+    .risk-card { border-color: color-mix(in srgb, var(--amber) 30%, var(--line)); }
+    .risk-badge { display: inline-flex; margin-bottom: 10px; padding: 4px 8px; border-radius: 999px; color: var(--amber); background: color-mix(in srgb, var(--amber) 10%, transparent); font-size: .74rem; font-weight: 800; }
+    .check-list a { overflow-wrap: anywhere; }
+    .warning-note { margin-top: 13px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--amber) 28%, transparent); border-radius: 12px; color: var(--text); background: color-mix(in srgb, var(--amber) 7%, transparent); font-size: .84rem; }
+    .refs { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+    .refs li { display: grid; grid-template-columns: 85px 1fr; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); scroll-margin-top: 20px; }
+    .refs strong { color: var(--cyan); }
+    .refs p { margin: 4px 0 0; color: var(--muted); font-size: .88rem; }
+    .refs a { overflow-wrap: anywhere; }
+    .verify-note { color: var(--amber) !important; }
+    .quiz { display: grid; gap: 14px; }
+    .question { padding: 18px; }
+    .question legend { padding: 0 7px; font-weight: 800; }
+    .answers { display: grid; gap: 8px; }
+    .answers label { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 9px; color: var(--muted); background: var(--bg); cursor: pointer; }
+    .answers label:hover { color: var(--text); background: var(--panel-2); }
+    .answers input { margin-top: 5px; accent-color: var(--cyan); }
+    .explanation { display: none; margin: 11px 0 0; padding: 10px 12px; border-left: 3px solid var(--cyan); border-radius: 0 9px 9px 0; background: color-mix(in srgb, var(--cyan) 6%, transparent); }
+    .explanation.visible { display: block; }
+    .quiz-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+    #quiz-result { color: var(--muted); }
+    #quiz-result.good { color: var(--green); }
+    #quiz-result.needs-work { color: var(--amber); }
+    footer { padding: 24px 0 38px; border-top: 1px solid color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); font-size: .83rem; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 16px; }
+    @media (max-width: 820px) {
+      .sim-shell, .osi-shell { grid-template-columns: 1fr; }
+      .step-panel { min-height: 0; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 620px) {
+      .wrap { width: min(100% - 24px, 1120px); }
+      .topbar-inner { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .nav { gap: 8px 14px; }
+      .nav-note { text-align: left; }
+      .hero { padding-top: 45px; }
+      section { padding: 30px 0; }
+      .grid-2, .detail-grid { grid-template-columns: 1fr; }
+      .diagram-top { flex-direction: column; }
+      .refs li { grid-template-columns: 1fr; gap: 3px; }
+      .footer-inner { flex-direction: column; }
+      .detail-top { flex-direction: column; }
+      .type-list li { grid-template-columns: 1fr; gap: 2px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    /* Mobile-first layout: stacked panels and a swipeable timeline on narrow screens. */
+    .wrap { width: min(1120px, calc(100% - 24px)); }
+    .topbar-inner { align-items: flex-start; flex-direction: column; gap: 12px; }
+    .nav { gap: 8px 14px; }
+    .nav-note { text-align: left; }
+    .hero { padding: 45px 0 30px; }
+    section { padding: 30px 0; }
+    .grid-2, .grid-3, .detail-grid, .osi-shell, .sim-shell { grid-template-columns: 1fr; }
+    .grid-2 > *, .grid-3 > *, .detail-grid > *, .osi-shell > *, .sim-shell > *, .card, .panel { min-width: 0; }
+    .type-list li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .refs li { grid-template-columns: 1fr; gap: 3px; }
+    .timeline { display: grid; grid-auto-columns: minmax(165px, 1fr); grid-auto-flow: column; grid-template-columns: none; min-width: 0; }
+    .timeline-wrap { overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; }
+    .generation-tab { scroll-snap-align: start; }
+    .compare-wrap { max-width: 100%; }
+    @media (min-width: 640px) {
+      .wrap { width: min(1120px, calc(100% - 36px)); }
+      .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .type-list li { grid-template-columns: 105px minmax(0, 1fr); gap: 10px; }
+      .refs li { grid-template-columns: 85px minmax(0, 1fr); gap: 12px; }
+      .timeline { grid-auto-columns: minmax(190px, 1fr); }
+    }
+    @media (min-width: 900px) {
+      .topbar-inner { align-items: center; flex-direction: row; }
+      .nav-note { text-align: right; }
+      .hero { padding: 64px 0 38px; }
+      section { padding: 38px 0; }
+      .grid-2, .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .osi-shell { grid-template-columns: minmax(250px, .75fr) minmax(0, 1.35fr); }
+      .sim-shell { grid-template-columns: minmax(0, 1.55fr) minmax(285px, .9fr); }
+      .timeline { grid-auto-flow: initial; grid-auto-columns: initial; grid-template-columns: repeat(4, minmax(0, 1fr)); min-width: 830px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#atas" aria-label="Kembali ke bagian atas">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>NETWORK SECURITY · MODUL BELAJAR</span>
+      </a>
+      <div>
+        <nav class="nav" aria-label="Navigasi halaman">
+          <a href="index.html">Beranda</a>
+          <a href="icmp-redirect.html">ICMP Redirect</a>
+          <a href="ntp-memcached-amplification.html">Amplification</a>
+          <a href="firewall-generations.html" aria-current="page">Firewall</a>
+        </nav>
+        <p class="nav-note">Link ini hanya berfungsi jika semua file ada dalam satu folder.</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="atas" class="wrap">
+    <section class="hero" aria-labelledby="page-title">
+      <span class="eyebrow">Jaringan · Kontrol akses · Defense in depth (pertahanan berlapis)</span>
+      <h1 id="page-title">Generasi Teknologi <span>Firewall</span></h1>
+      <p class="hero-copy">Firewall berkembang dari penyaringan header paket (metadata kontrol) menuju pemeriksaan koneksi, protokol aplikasi, dan fitur keamanan terintegrasi. Halaman ini membandingkan empat kelompok teknologi secara konseptual, menunjukkan keputusan terhadap beberapa skenario paket, dan menjelaskan batas firewall dalam pertahanan jaringan.</p>
+      <div class="hero-note">
+        <span aria-hidden="true">ⓘ</span>
+        <span><strong>Prasyarat:</strong> kenali alamat IP, port, koneksi jaringan, dan model OSI (<em>Open Systems Interconnection</em>). Materi ini bersifat edukatif dan defensif; simulasi tidak mengirim paket serta tidak merepresentasikan produk/vendor tertentu.</span>
+      </div>
+    </section>
+
+    <section id="ringkasan" aria-labelledby="quick-title">
+      <div class="section-heading">
+        <p class="section-tag">01 · Ringkasan cepat</p>
+        <h2 id="quick-title">TL;DR · Ringkasan inti</h2>
+      </div>
+      <div class="grid-3">
+        <article class="card quick-card"><span class="quick-number">01</span><h3>Firewall menegakkan kebijakan</h3><p>Firewall memeriksa dan mengizinkan atau menolak trafik sesuai aturan; ia dapat berupa packet filter, proxy, atau gabungan fungsi <a href="#ref-3">[3]</a>.</p></article>
+        <article class="card quick-card"><span class="quick-number">02</span><h3>Lebih banyak konteks, bukan otomatis sempurna</h3><p>Stateful inspection menambah konteks koneksi; proxy dan Next-Generation Firewall (NGFW, firewall generasi baru) dapat memeriksa informasi aplikasi lebih dalam, bergantung fitur dan konfigurasi <a href="#ref-1">[1]</a><a href="#ref-2">[2]</a>.</p></article>
+        <article class="card quick-card"><span class="quick-number">03</span><h3>Kebijakan tetap menentukan</h3><p>Generasi terbaru tidak menggantikan desain aturan, pembaruan, logging, pemantauan, segmentasi, dan respons insiden <a href="#ref-1">[1]</a>.</p></article>
+      </div>
+    </section>
+
+    <section id="konsep" aria-labelledby="concept-title">
+      <div class="section-heading">
+        <p class="section-tag">02 · Konsep dasar</p>
+        <h2 id="concept-title">Apa itu firewall, dan di mana ia bekerja?</h2>
+        <p class="lead">Firewall adalah komponen yang menyaring trafik jaringan berdasarkan kebijakan untuk memblokir akses yang dianggap tidak sesuai atau berbahaya <a href="#ref-3">[3]</a>. Data biasanya dikirim dalam paket yang membawa alamat IP (<em>Internet Protocol</em>, alamat jaringan), port (nomor layanan pada perangkat), serta metadata protokol.</p>
+        <p class="muted">TCP (<em>Transmission Control Protocol</em>) membentuk koneksi yang dilacak berurutan; UDP (<em>User Datagram Protocol</em>) mengirim datagram tanpa handshake koneksi seperti TCP. <em>Payload</em> adalah bagian data/isi yang dibawa paket. Ini istilah penting saat membahas state dan inspeksi konten.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Penempatan umum</h3>
+          <ul class="type-list">
+            <li><strong>Network firewall</strong><span>Ditempatkan pada jalur antarjaringan, misalnya batas jaringan organisasi atau antarsegmen internal; aturan mengontrol trafik yang melintas.</span></li>
+            <li><strong>Host-based firewall</strong><span>Berjalan pada endpoint (perangkat akhir seperti laptop atau server) dan mengatur trafik masuk/keluar perangkat tersebut. Ini bisa melengkapi kontrol di perimeter.</span></li>
+            <li><strong>Proxy</strong><span>Bertindak sebagai perantara untuk protokol/aplikasi tertentu: koneksi client berakhir di proxy, lalu proxy menangani koneksi berikutnya <a href="#ref-1">[1]</a><a href="#ref-3">[3]</a>.</span></li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Model OSI secara singkat</h3>
+          <p>Model OSI (<em>Open Systems Interconnection</em>) membagi komunikasi jaringan menjadi tujuh lapisan konseptual. Dalam pembelajaran firewall, packet filter umumnya melihat informasi jaringan dan transport (Layer 3–4), sedangkan proxy aplikasi dan inspeksi NGFW dapat menggunakan informasi aplikasi (Layer 7). Pemetaan ini bersifat konseptual—fitur aktual bergantung implementasi dan konfigurasi <a href="#ref-1">[1]</a><a href="#ref-2">[2]</a>.</p>
+          <p><em>Deep packet inspection</em> (DPI) berarti memeriksa isi atau struktur paket melampaui metadata <em>header</em> (bagian informasi kontrol paket); seberapa jauh pemeriksaan dilakukan bergantung protokol dan konfigurasi. Stateful inspection mencatat keadaan koneksi atau <em>flow</em> (aliran paket yang menjadi bagian dari komunikasi) untuk menilai paket dalam konteks, tetapi bukan berarti memahami seluruh maksud aplikasi.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="generasi" aria-labelledby="timeline-title">
+      <div class="section-heading">
+        <p class="section-tag">03 · Cara kerja tiap generasi</p>
+        <h2 id="timeline-title">Timeline interaktif</h2>
+        <p class="lead">Klik generasi untuk melihat lapisan OSI, informasi yang diperiksa, kelebihan, batasan, dan contoh jenis trafik yang mungkin diizinkan atau ditahan.</p>
+      </div>
+      <div class="timeline-wrap">
+        <div class="timeline" role="tablist" aria-label="Pilih generasi firewall">
+          <button class="generation-tab" id="gen-tab-0" type="button" role="tab" aria-selected="true" aria-controls="generation-content" tabindex="0">
+            <span class="timeline-dot">1</span><span class="timeline-title">Packet filtering</span><span class="timeline-sub">Header paket</span>
+          </button>
+          <button class="generation-tab" id="gen-tab-1" type="button" role="tab" aria-selected="false" aria-controls="generation-content" tabindex="-1">
+            <span class="timeline-dot">2</span><span class="timeline-title">Stateful inspection</span><span class="timeline-sub">Konteks koneksi</span>
+          </button>
+          <button class="generation-tab" id="gen-tab-2" type="button" role="tab" aria-selected="false" aria-controls="generation-content" tabindex="-1">
+            <span class="timeline-dot">3</span><span class="timeline-title">Application layer / proxy</span><span class="timeline-sub">Protokol aplikasi</span>
+          </button>
+          <button class="generation-tab" id="gen-tab-3" type="button" role="tab" aria-selected="false" aria-controls="generation-content" tabindex="-1">
+            <span class="timeline-dot">4</span><span class="timeline-title">Next-Generation Firewall</span><span class="timeline-sub">Konteks + fitur tambahan</span>
+          </button>
+        </div>
+      </div>
+      <article id="generation-content" class="panel generation-detail" role="tabpanel" aria-labelledby="gen-tab-0" tabindex="0">
+        <div class="detail-top">
+          <div><span id="detail-kicker" class="detail-kicker">Generasi 1</span><h3 id="detail-name" class="detail-name">Packet filtering firewall</h3><p id="detail-summary">Mencocokkan header paket dengan aturan jaringan/transport, lalu mengizinkan atau menolaknya.</p></div>
+          <span id="detail-os" class="detail-os">OSI Layer 3–4</span>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-cell"><h4>Informasi yang dilihat</h4><p id="detail-sees"></p></div>
+          <div class="detail-cell good"><h4>Kelebihan</h4><p id="detail-pros"></p></div>
+          <div class="detail-cell caution"><h4>Kekurangan</h4><p id="detail-cons"></p></div>
+          <div class="detail-cell stop"><h4>Contoh tertahan / dapat lolos</h4><p id="detail-examples"></p></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="lapisan" aria-labelledby="osi-title">
+      <div class="section-heading">
+        <p class="section-tag">Pemetaan lapisan</p>
+        <h2 id="osi-title">Lapisan OSI yang diperiksa</h2>
+        <p class="lead">Pilih generasi pada timeline di atas; layer yang umumnya relevan akan disorot. Ini bukan jaminan semua produk memeriksa semua layer tersebut.</p>
+      </div>
+      <div class="osi-shell">
+        <article class="panel osi-card">
+          <h3>Model OSI · 7 lapisan</h3>
+          <div class="osi-diagram" role="img" aria-label="Diagram tujuh lapisan OSI; lapisan yang disorot berubah menurut generasi firewall yang dipilih.">
+            <div class="osi-layer" data-layer="7"><span class="layer-number">7</span><span>Application</span><span class="inspect-mark">DIPERIKSA</span></div>
+            <div class="osi-layer" data-layer="6"><span class="layer-number">6</span><span>Presentation</span><span class="inspect-mark">KONTEKS</span></div>
+            <div class="osi-layer" data-layer="5"><span class="layer-number">5</span><span>Session</span><span class="inspect-mark">KONTEKS</span></div>
+            <div class="osi-layer" data-layer="4"><span class="layer-number">4</span><span>Transport</span><span class="inspect-mark">DIPERIKSA</span></div>
+            <div class="osi-layer" data-layer="3"><span class="layer-number">3</span><span>Network</span><span class="inspect-mark">DIPERIKSA</span></div>
+            <div class="osi-layer" data-layer="2"><span class="layer-number">2</span><span>Data Link</span><span class="inspect-mark">KONTEKS</span></div>
+            <div class="osi-layer" data-layer="1"><span class="layer-number">1</span><span>Physical</span><span class="inspect-mark">KONTEKS</span></div>
+          </div>
+          <p id="osi-note" class="muted osi-note">Hijau menandai informasi yang lazim menjadi dasar inspeksi pada model generasi yang dipilih.</p>
+        </article>
+        <article class="card">
+          <h3>Jangan samakan “layer” dengan “sempurna”</h3>
+          <p class="muted">Firewall dapat memakai metadata dan state tanpa memahami maksud penuh aplikasi. Proxy khusus aplikasi bisa memvalidasi protokol yang didukung, tetapi hanya jika trafik memang melewati proxy tersebut. NGFW dapat menambahkan application awareness, IPS (<em>Intrusion Prevention System</em>, sistem pencegahan intrusi), dan fungsi lain; hasilnya bergantung pada konfigurasi, lisensi/fitur, pembaruan, serta visibilitas terhadap trafik terenkripsi <a href="#ref-2">[2]</a><a href="#ref-3">[3]</a>.</p>
+          <div class="warning-note">Istilah “generasi” adalah kerangka pengajaran, bukan penomoran baku universal. Halaman ini menyusun empat kelompok dari jenis firewall yang dijelaskan NIST dan Cisco, lalu memakai urutan pedagogis packet filter → stateful → proxy/application → NGFW <a href="#ref-1">[1]</a><a href="#ref-2">[2]</a>.</div>
+        </article>
+      </div>
+    </section>
+
+    <section id="animasi" aria-labelledby="animation-title">
+      <div class="section-heading">
+        <p class="section-tag">Simulasi konseptual</p>
+        <h2 id="animation-title">Paket sama, keputusan berbeda</h2>
+        <p class="lead">Pilih skenario untuk membandingkan bagaimana empat model inspeksi dapat menilai paket yang sama. Setiap tahap adalah evaluasi alternatif atas paket yang sama, bukan rantai empat perangkat produksi; hasilnya adalah contoh kebijakan, bukan hasil yang pasti dari seluruh produk.</p>
+      </div>
+      <div class="sim-shell">
+        <article class="panel diagram-card">
+          <div class="diagram-top">
+            <div><h3>Alur paket melalui kontrol firewall</h3><p>Empat tahap menggambarkan model kebijakan yang makin kontekstual.</p></div>
+          </div>
+          <div class="legend" aria-label="Legenda diagram">
+            <span><i class="attack"></i> Sumber tidak tepercaya</span><span><i class="victim-key"></i> Arah tujuan</span><span><i class="defense"></i> Firewall / kontrol</span><span><i></i> Jaringan netral</span>
+          </div>
+          <svg class="diagram" viewBox="0 0 760 300" role="img" aria-label="Diagram animasi paket melewati empat firewall: packet filtering, stateful inspection, application proxy, dan Next-Generation Firewall. Setiap firewall menampilkan keputusan allow atau deny sesuai skenario.">
+            <defs>
+              <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--blue)"></path></marker>
+              <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--red)"></path></marker>
+            </defs>
+            <path id="flow-0" class="link" d="M 95 150 L 235 150"></path>
+            <path id="flow-1" class="link" d="M 290 150 L 385 150"></path>
+            <path id="flow-2" class="link" d="M 440 150 L 535 150"></path>
+            <path id="flow-3" class="link" d="M 590 150 L 675 150"></path>
+            <g class="node attacker" transform="translate(15 122)"><rect width="80" height="56" rx="12"></rect><text class="title" x="40" y="25" text-anchor="middle">Sumber</text><text class="sub" x="40" y="43" text-anchor="middle">untrusted</text></g>
+            <g class="node defense" transform="translate(235 108)"><rect width="55" height="84" rx="12"></rect><text class="title" x="27" y="35" text-anchor="middle">PF</text><text class="sub" x="27" y="57" text-anchor="middle">L3–4</text></g>
+            <g class="node defense" transform="translate(385 108)"><rect width="55" height="84" rx="12"></rect><text class="title" x="27" y="35" text-anchor="middle">SI</text><text class="sub" x="27" y="57" text-anchor="middle">state</text></g>
+            <g class="node defense" transform="translate(535 108)"><rect width="55" height="84" rx="12"></rect><text class="title" x="27" y="35" text-anchor="middle">Proxy</text><text class="sub" x="27" y="57" text-anchor="middle">L7</text></g>
+            <g class="node defense" transform="translate(675 108)"><rect width="55" height="84" rx="12"></rect><text class="title" x="27" y="35" text-anchor="middle">NGFW</text><text class="sub" x="27" y="57" text-anchor="middle">policy</text></g>
+            <text id="decision-label-0" class="edge-label" x="262" y="225" text-anchor="middle">—</text>
+            <text id="decision-label-1" class="edge-label" x="412" y="225" text-anchor="middle">—</text>
+            <text id="decision-label-2" class="edge-label" x="562" y="225" text-anchor="middle">—</text>
+            <text id="decision-label-3" class="edge-label" x="702" y="225" text-anchor="middle">—</text>
+            <g id="packet-marker" class="packet" aria-hidden="true"><circle r="9" fill="var(--blue)" stroke="var(--text)" stroke-width="2"></circle></g>
+            <g class="node victim" transform="translate(675 15)"><rect width="65" height="45" rx="11"></rect><text class="title" x="32" y="28" text-anchor="middle">Tujuan</text></g>
+            <text class="edge-label" x="360" y="275" text-anchor="middle">PF = packet filter · SI = stateful inspection · NGFW = Next-Generation Firewall</text>
+          </svg>
+          <p class="warning-note" style="margin:0 20px 18px">Diagram membandingkan evaluasi alternatif atas paket yang sama, bukan satu koneksi yang diteruskan melalui empat perangkat. DENY berarti kontrol model itu menolak paket; tahap berikutnya menunjukkan bagaimana model lain akan menilainya.</p>
+        </article>
+        <aside class="panel step-panel" aria-live="polite">
+          <label for="scenario-select" class="mini-label">Skenario paket</label>
+          <select id="scenario-select" class="scenario-select">
+            <option value="syn">Paket SYN biasa</option>
+            <option value="orphan-reply">Paket reply tanpa koneksi yang pernah dibuat</option>
+            <option value="http-payload">Request HTTP berisi payload berbahaya</option>
+            <option value="port-disguise">Aplikasi menyamar di port 443</option>
+          </select>
+          <span id="animation-count" class="step-count" style="margin-top:16px">Tahap 1 dari 4</span>
+          <h3 id="animation-stage">Packet filtering</h3>
+          <p id="animation-description" class="step-description"></p>
+          <div id="decision-card" class="decision">
+            <strong id="decision-result">Belum diproses</strong>
+            <p id="decision-reason"></p>
+          </div>
+          <div class="controls" aria-label="Kontrol animasi">
+            <button id="back-step" class="control" type="button">Back</button>
+            <button id="play-animation" class="control primary" type="button">Play</button>
+            <button id="pause-animation" class="control" type="button">Pause</button>
+            <button id="next-step" class="control" type="button">Next</button>
+            <button id="replay-animation" class="control" type="button">Replay</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="mengapa" aria-labelledby="why-title">
+      <div class="section-heading">
+        <p class="section-tag">04 · Evolusi teknologi</p>
+        <h2 id="why-title">Mengapa generasi baru muncul?</h2>
+        <p class="lead">Perubahan bukan berarti teknologi lama hilang. Tiap pendekatan tetap berguna pada kebutuhan yang sesuai, tetapi menyisakan area yang mendorong inspeksi lebih kontekstual <a href="#ref-1">[1]</a><a href="#ref-2">[2]</a>.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card"><h3>Dari header ke konteks koneksi</h3><p>Packet filtering sederhana tidak tahu apakah paket cocok dengan koneksi yang sudah dibangun. Stateful inspection menambahkan tabel state sehingga paket balasan dapat dikaitkan dengan alur yang diizinkan, bukan sekadar alamat dan port.</p></article>
+        <article class="card"><h3>Dari port ke protokol aplikasi</h3><p>Port saja tidak selalu menjelaskan jenis atau isi komunikasi. Proxy khusus aplikasi dapat menjadi endpoint perantara dan memeriksa protokol yang dipahaminya; ini memerlukan dukungan protokol dan penempatan yang tepat <a href="#ref-3">[3]</a>.</p></article>
+        <article class="card"><h3>Dari kontrol terpisah ke kebijakan terpadu</h3><p>NGFW menambahkan fitur seperti application awareness/control dan IPS di atas stateful firewall. Hal ini memberi konteks tambahan, tetapi bukan pengganti kebijakan yang jelas, pemantauan, serta pemeliharaan signature/fitur <a href="#ref-2">[2]</a>.</p></article>
+        <article class="card"><h3>Catatan UTM</h3><p><em>Unified Threat Management</em> (UTM) menggabungkan beberapa fungsi keamanan—misalnya firewall stateful, IPS, dan antivirus—dalam satu platform. UTM adalah kategori integrasi yang beririsan dengan NGFW; bukan tahap generasi universal tersendiri <a href="#ref-2">[2]</a>.</p></article>
+      </div>
+    </section>
+
+    <section id="perbandingan" aria-labelledby="compare-title">
+      <div class="section-heading">
+        <p class="section-tag">Tabel perbandingan</p>
+        <h2 id="compare-title">Apa yang berubah dari satu pendekatan ke pendekatan lain?</h2>
+        <p class="lead">Keterangan kecepatan/overhead bersifat kualitatif, bukan benchmark: performa aktual dipengaruhi platform, konfigurasi, fitur yang aktif, dan beban trafik <a href="#ref-1">[1]</a><a href="#ref-3">[3]</a>.</p>
+      </div>
+      <div class="compare-wrap">
+        <table class="compare-table">
+          <thead><tr><th>Generasi (model)</th><th>Layer OSI (umum)</th><th>State koneksi</th><th>Deep packet inspection</th><th>Kecepatan / overhead kualitatif</th><th>Contoh penggunaan</th></tr></thead>
+          <tbody>
+            <tr><td>Packet filtering</td><td>Network + Transport (L3–4)</td><td>Tidak melacak sesi secara penuh</td><td>Tidak; fokus pada header</td><td>Relatif sederhana; rule set dan perangkat tetap berpengaruh</td><td>ACL router (Access Control List, daftar kontrol akses), filter dasar antarjaringan</td></tr>
+            <tr><td>Stateful inspection</td><td>L3–4 + tabel koneksi</td><td>Ya, melacak flow/koneksi</td><td>Umumnya tidak memeriksa payload aplikasi penuh</td><td>Menambah pencatatan/pencocokan state</td><td>Firewall perimeter untuk mengontrol koneksi masuk/keluar</td></tr>
+            <tr><td>Application layer / proxy</td><td>Application (L7) untuk protokol yang didukung</td><td>Proxy menangani koneksi sebagai perantara; detail bergantung protokol</td><td>Dapat memvalidasi/memeriksa pesan aplikasi yang dipahami</td><td>Proxy dapat menambah latency (waktu tunda) atau membatasi throughput (banyaknya data yang diproses per waktu)/aplikasi</td><td>Proxy web atau gateway aplikasi khusus</td></tr>
+            <tr><td>NGFW</td><td>L3–7 sesuai fitur/visibilitas</td><td>Stateful ditambah identitas/konteks aplikasi jika tersedia</td><td>Dapat mencakup IPS dan inspeksi konten sesuai konfigurasi</td><td>Sangat bergantung fitur aktif dan platform</td><td>Kontrol jaringan terpadu dengan application control dan IPS</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:10px;font-size:.81rem">Deskripsi fungsi dirangkum dari NIST dan materi pengantar Cisco; label generasi dan nilai kecepatan di tabel adalah klasifikasi kualitatif untuk pembelajaran <a href="#ref-1">[1]</a><a href="#ref-2">[2]</a><a href="#ref-3">[3]</a>.</p>
+    </section>
+
+    <section id="kasus" aria-labelledby="case-title">
+      <div class="section-heading">
+        <p class="section-tag">05 · Contoh kasus penggunaan</p>
+        <h2 id="case-title">Pola penempatan yang umum</h2>
+        <p class="lead">Contoh berikut adalah pola desain firewall, bukan klaim insiden organisasi tertentu. Panduan NIST membahas network firewall, host-based firewall, perimeter security, dan kebijakan firewall <a href="#ref-1">[1]</a>.</p>
+      </div>
+      <div class="grid-3">
+        <article class="card"><h3>Batas internet organisasi</h3><p>Firewall jaringan menerapkan kebijakan trafik antara jaringan eksternal dan layanan internal. Stateful rules dapat membatasi koneksi yang diinisiasi dari luar dan mengizinkan trafik balasan yang berkaitan dengan koneksi yang sah <a href="#ref-1">[1]</a><a href="#ref-3">[3]</a>.</p></article>
+        <article class="card"><h3>Segmentasi jaringan internal</h3><p>Aturan firewall dapat membatasi komunikasi antarsegmen—misalnya hanya mengizinkan layanan yang diperlukan antara zona pengguna dan server—agar akses tidak otomatis terbuka ke seluruh jaringan <a href="#ref-1">[1]</a>.</p></article>
+        <article class="card"><h3>Perlindungan host/server</h3><p>Host-based firewall menerapkan aturan pada perangkat individual dan dapat melengkapi kontrol perimeter. Kebijakan perlu mengikuti peran perangkat, layanan yang memang dibutuhkan, dan proses pemeliharaan <a href="#ref-1">[1]</a>.</p></article>
+      </div>
+    </section>
+
+    <section id="topik-lain" aria-labelledby="related-title">
+      <div class="section-heading">
+        <p class="section-tag">Hubungan dengan topik lain</p>
+        <h2 id="related-title">ICMP Redirect dan UDP reflection/amplification</h2>
+        <p class="lead">Firewall dapat menegakkan aturan protokol dan arah trafik, tetapi titik penempatan serta detail inspeksi menentukan kontrol yang benar-benar mungkin.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <span class="risk-badge">ICMP Redirect · Type 5</span>
+          <h3>Kontrol ICMP Redirect</h3>
+          <p>Packet filter/stateful firewall yang memahami ICMP (<em>Internet Control Message Protocol</em>) dapat membuat aturan untuk membatasi atau memblokir ICMP Redirect (ICMPv4 Type 5) pada interface/zona yang sesuai. NGFW juga dapat menerapkan kebijakan protokol, tetapi nama fitur dan inspeksinya bergantung implementasi. Jangan memblokir ICMP secara membabi buta: jenis ICMP lain dapat dibutuhkan untuk operasi jaringan dan diagnosis; cocokkan kebijakan dengan desain routing dan dokumentasi perangkat <a href="#ref-1">[1]</a><a href="#ref-4">[4]</a><a href="#ref-5">[5]</a>.</p>
+        </article>
+        <article class="card">
+          <span class="risk-badge">NTP / Memcached · UDP</span>
+          <h3>Membatasi reflector dan trafik amplification</h3>
+          <p>Firewall di sisi server dapat membatasi akses UDP ke layanan yang tidak perlu terekspos—misalnya NTP (<em>Network Time Protocol</em>) mode kontrol atau Memcached—berdasarkan interface, sumber, port, dan kebijakan aplikasi bila didukung. Stateful firewall dapat mengelola flow, tetapi UDP tidak memiliki handshake koneksi seperti TCP; state bukan bukti identitas sumber. BCP 38 (<em>Best Current Practice</em> 38) mendorong filtering alamat sumber palsu di jaringan asal <a href="#ref-6">[6]</a><a href="#ref-7">[7]</a><a href="#ref-8">[8]</a>.</p>
+          <p class="muted">Penting: firewall di sisi korban mungkin membantu menyaring trafik yang sudah tiba, tetapi tidak dapat mengatasi link hulu yang telah tersaturasi sebelum paket mencapai firewall. Koordinasi dengan ISP (Internet Service Provider, penyedia layanan internet) atau upstream provider, layanan scrubbing (penyaringan trafik serangan)/anti-DDoS (<em>Distributed Denial of Service</em>, mitigasi serangan penolakan layanan terdistribusi), dan penutupan reflector di sisi server dapat diperlukan <a href="#ref-1">[1]</a><a href="#ref-7">[7]</a>.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="praktik" aria-labelledby="practice-title">
+      <div class="section-heading">
+        <p class="section-tag">06 · Praktik terbaik dan keterbatasan</p>
+        <h2 id="practice-title">Firewall efektif sebagai bagian dari pertahanan berlapis</h2>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <h3>Praktik terbaik</h3>
+          <ul class="check-list">
+            <li>Tetapkan kebijakan berdasarkan kebutuhan bisnis dan prinsip <em>least privilege</em> (hak/akses minimum yang diperlukan): hanya buka trafik yang diperlukan <a href="#ref-1">[1]</a>.</li>
+            <li>Dokumentasikan pemilik rule, tujuan, sumber/tujuan, layanan, masa berlaku, dan proses persetujuan perubahan.</li>
+            <li>Uji perubahan secara terencana; tinjau rule yang usang, duplikat, terlalu luas, atau tidak lagi punya pemilik.</li>
+            <li>Aktifkan logging secukupnya, lindungi log, pantau pola yang relevan, dan sesuaikan volume agar tidak menutupi kejadian penting.</li>
+            <li>Perbarui sistem dan <em>firmware</em> (perangkat lunak dasar perangkat), signature (pola deteksi), serta daftar aplikasi sesuai kemampuan platform; verifikasi apakah inspeksi terenkripsi tersedia dan diizinkan.</li>
+            <li>Gabungkan network firewall, host firewall, segmentasi, patching, autentikasi, backup, dan rencana respons insiden; jangan mengandalkan satu perangkat.</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Keterbatasan yang perlu diingat</h3>
+          <ul class="check-list">
+            <li>Firewall hanya menegakkan kebijakan pada trafik yang melewatinya; jalur alternatif atau koneksi langsung dapat luput dari kontrol ini.</li>
+            <li>Aturan salah konfigurasi dapat memblokir layanan sah atau membuka akses terlalu luas.</li>
+            <li>Enkripsi membatasi inspeksi payload kecuali ada mekanisme inspeksi yang dikonfigurasi dan sah; mekanisme itu juga membawa pertimbangan privasi dan operasional.</li>
+            <li>Firewall bukan pengganti keamanan endpoint, keamanan aplikasi, deteksi ancaman, atau pemulihan dari insiden.</li>
+            <li>Firewall di hilir tidak dapat memulihkan kapasitas link yang sudah habis oleh trafik sebelum mencapai perangkat.</li>
+          </ul>
+        </article>
+      </div>
+      <div class="purpose" style="margin-top:16px">
+        <span class="purpose-mark" aria-hidden="true">✓</span>
+        <div><strong>Prinsip desain:</strong> pilih kontrol berdasarkan ancaman, titik inspeksi, visibilitas, dan dampak terhadap layanan—bukan sekadar label “generasi terbaru”.</div>
+      </div>
+    </section>
+
+    <section id="batasan-simulasi" aria-labelledby="limits-title">
+      <div class="section-heading">
+        <p class="section-tag">Catatan model</p>
+        <h2 id="limits-title">Apa yang tidak diklaim simulasi ini</h2>
+      </div>
+      <div class="grid-2">
+        <article class="card"><h3>Bukan pengujian produk</h3><p class="muted">Keputusan allow/deny adalah hasil kebijakan contoh untuk tujuan belajar. Produk nyata memiliki fitur, parser, aturan, default, dan batas berbeda; tidak ada perangkat yang diuji.</p></article>
+        <article class="card"><h3>Bukan model layer yang mutlak</h3><p class="muted">Label OSI menyederhanakan fitur yang sering dikaitkan dengan jenis firewall. Implementasi dapat menggabungkan beberapa teknik, dan inspeksi aktual bergantung konfigurasi serta visibilitas trafik.</p></article>
+        <article class="card"><h3>Bukan klaim performa</h3><p class="muted">Perbandingan kecepatan/overhead bersifat deskriptif, tidak menyertakan benchmark, throughput, latency, atau peringkat vendor.</p></article>
+        <article class="card"><h3>Bukan jaminan keamanan</h3><p class="muted">Firewall yang lebih baru tidak menjamin serangan tertahan. Hasil dipengaruhi cakupan aturan, pembaruan, arsitektur, trafik terenkripsi, dan kontrol lain di jaringan.</p></article>
+      </div>
+    </section>
+
+    <section id="kuis" aria-labelledby="quiz-title">
+      <div class="section-heading">
+        <p class="section-tag">07 · Cek pemahaman</p>
+        <h2 id="quiz-title">Kuis singkat</h2>
+        <p class="lead">Pilih satu jawaban pada tiap soal, lalu periksa hasilnya. Penjelasan muncul setelah jawaban diperiksa.</p>
+      </div>
+      <form id="quiz-form" class="quiz">
+        <fieldset class="panel question">
+          <legend>1. Informasi utama yang digunakan packet filtering tradisional adalah…</legend>
+          <div class="answers">
+            <label><input type="radio" name="q1" value="a"> Header seperti alamat IP, port, dan protokol</label>
+            <label><input type="radio" name="q1" value="b"> Makna bisnis dari setiap pesan aplikasi secara otomatis</label>
+            <label><input type="radio" name="q1" value="c"> Isi seluruh disk pada endpoint</label>
+          </div>
+          <p class="explanation" data-explanation="a">Benar. Packet filtering umumnya mencocokkan atribut jaringan/transport dalam header dengan aturan.</p>
+          <p class="explanation" data-explanation="other">Belum tepat. Packet filter tradisional terutama menggunakan informasi header seperti IP, port, dan protokol.</p>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>2. Apa tambahan penting pada stateful inspection?</legend>
+          <div class="answers">
+            <label><input type="radio" name="q2" value="a"> Menghapus kebutuhan akan aturan firewall</label>
+            <label><input type="radio" name="q2" value="b"> Melacak keadaan koneksi agar paket dinilai dalam konteks flow</label>
+            <label><input type="radio" name="q2" value="c"> Mendekripsi semua aplikasi secara otomatis</label>
+          </div>
+          <p class="explanation" data-explanation="b">Benar. Stateful inspection menggunakan informasi state koneksi/flow, selain aturan dan atribut paket.</p>
+          <p class="explanation" data-explanation="other">Belum tepat. Perbedaannya adalah pencatatan state koneksi, bukan penghapusan aturan atau dekripsi otomatis.</p>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>3. Kelebihan khas proxy firewall aplikasi adalah…</legend>
+          <div class="answers">
+            <label><input type="radio" name="q3" value="a"> Menjadi perantara dan memahami protokol aplikasi yang didukung</label>
+            <label><input type="radio" name="q3" value="b"> Selalu memblokir semua malware tanpa konfigurasi</label>
+            <label><input type="radio" name="q3" value="c"> Tidak pernah memengaruhi latency atau throughput</label>
+          </div>
+          <p class="explanation" data-explanation="a">Benar. Proxy menjadi endpoint perantara untuk aplikasi/protokol yang didukung dan dapat melakukan pemeriksaan yang lebih relevan pada level aplikasi.</p>
+          <p class="explanation" data-explanation="other">Belum tepat. Proxy dapat memeriksa aplikasi yang didukung, tetapi tidak menjamin deteksi sempurna maupun tanpa overhead.</p>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>4. Mengapa NGFW belum tentu mengenali aplikasi yang menyamar di port 443?</legend>
+          <div class="answers">
+            <label><input type="radio" name="q4" value="a"> Karena port 443 tidak dapat membawa trafik jaringan</label>
+            <label><input type="radio" name="q4" value="b"> Karena inspeksi aplikasi memerlukan fitur, kebijakan, dan visibilitas yang sesuai; enkripsi dapat membatasi inspeksi payload</label>
+            <label><input type="radio" name="q4" value="c"> Karena NGFW hanya bekerja untuk ICMP</label>
+          </div>
+          <p class="explanation" data-explanation="b">Benar. Application awareness bergantung pada kemampuan/peraturan perangkat dan konteks yang dapat dilihatnya; enkripsi dapat menghalangi inspeksi isi.</p>
+          <p class="explanation" data-explanation="other">Belum tepat. Pengenalan aplikasi bukan otomatis; konfigurasi dan visibilitas, termasuk dampak enkripsi, menentukan hasil.</p>
+        </fieldset>
+        <fieldset class="panel question">
+          <legend>5. Apa keterbatasan firewall di sisi korban saat terjadi DDoS volumetrik?</legend>
+          <div class="answers">
+            <label><input type="radio" name="q5" value="a"> Dapat menyaring paket yang tiba, tetapi tidak mengembalikan kapasitas link hulu yang sudah tersaturasi</label>
+            <label><input type="radio" name="q5" value="b"> Selalu dapat menghentikan trafik sebelum mencapai ISP</label>
+            <label><input type="radio" name="q5" value="c"> Tidak dapat menerapkan aturan port apa pun</label>
+          </div>
+          <p class="explanation" data-explanation="a">Benar. Filtering lokal dapat membantu setelah trafik mencapai titik tersebut, tetapi saturasi upstream memerlukan koordinasi jaringan hulu atau layanan mitigasi.</p>
+          <p class="explanation" data-explanation="other">Belum tepat. Perangkat lokal tidak dapat mengembalikan kapasitas link yang telah penuh sebelum trafik tiba.</p>
+        </fieldset>
+        <div class="quiz-actions">
+          <button class="control primary" type="submit">Periksa jawaban</button>
+          <button id="reset-quiz" class="control" type="reset">Ulangi kuis</button>
+          <p id="quiz-result" aria-live="polite" role="status">Skor akan muncul di sini.</p>
+        </div>
+      </form>
+    </section>
+
+    <section id="referensi" aria-labelledby="refs-title">
+      <div class="section-heading">
+        <p class="section-tag">08 · Referensi</p>
+        <h2 id="refs-title">Sumber primer dan dokumentasi</h2>
+        <p class="lead">Penomoran generasi pada halaman ini adalah urutan pedagogis, bukan klasifikasi resmi yang disepakati semua sumber. Sitasi dapat diklik untuk menuju entri sumber.</p>
+      </div>
+      <ol class="refs">
+        <li id="ref-1">
+          <strong>[1] NIST</strong>
+          <div><a href="https://csrc.nist.gov/pubs/sp/800/41/r1/final">Karen Scarfone &amp; Paul Hoffman, “Guidelines on Firewalls and Firewall Policy”</a><p>NIST Special Publication 800-41 Revision 1, September 2009. Panduan firewall jaringan/host, kebijakan firewall, packet filtering, proxy, dan perimeter security.</p></div>
+        </li>
+        <li id="ref-2">
+          <strong>[2] Cisco</strong>
+          <div><a href="https://www.cisco.com/site/us/en/learn/topics/security/what-is-a-firewall.html">Cisco, “What Is a Firewall?”</a><p>Halaman edukasi vendor tentang packet filtering, proxy, stateful inspection, UTM, dan NGFW.</p><p class="verify-note">Tahun publikasi tidak ditampilkan pada halaman yang diverifikasi; perlu diperiksa manual bila sitasi harus mencantumkan tahun terbit.</p></div>
+        </li>
+        <li id="ref-3">
+          <strong>[3] IETF</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc2979.txt">Ned Freed, “Behavior of and Requirements for Internet Firewalls”</a><p>RFC 2979, Oktober 2000. Menjelaskan fungsi firewall, packet filter, endpoint protokol/proxy, serta contoh atribut kebijakan.</p></div>
+        </li>
+        <li id="ref-4">
+          <strong>[4] IETF</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc792">Jon Postel, “Internet Control Message Protocol”</a><p>RFC 792, September 1981. Rujukan format dan jenis pesan ICMPv4; Type 5 adalah Redirect.</p></div>
+        </li>
+        <li id="ref-5">
+          <strong>[5] NIST</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc1812.txt">Fred Baker, editor, “Requirements for IP Version 4 Routers”</a><p>RFC 1812, Juni 1995. Persyaratan router IPv4, termasuk konteks perilaku ICMP Redirect.</p></div>
+        </li>
+        <li id="ref-6">
+          <strong>[6] NVD</strong>
+          <div><a href="https://nvd.nist.gov/vuln/detail/CVE-2013-5211">NIST National Vulnerability Database, “CVE-2013-5211 Detail”</a><p>2014. Rujukan kelemahan NTP mode-7 yang berkaitan dengan potensi penyalahgunaan layanan NTP.</p><p class="verify-note">Halaman NVD memakai konten dinamis; detail deskripsi dan tanggal perlu diperiksa manual bila diperlukan untuk sitasi presisi.</p></div>
+        </li>
+        <li id="ref-7">
+          <strong>[7] Cloudflare</strong>
+          <div><a href="https://blog.cloudflare.com/memcrashed-major-amplification-attacks-from-port-11211/">Cloudflare, “Memcrashed - Major amplification attacks from UDP port 11211”</a><p>2018. Laporan teknis tentang penyalahgunaan instance Memcached/UDP yang terekspos dan mitigasi amplification.</p></div>
+        </li>
+        <li id="ref-8">
+          <strong>[8] IETF</strong>
+          <div><a href="https://www.rfc-editor.org/rfc/rfc2827">Paul Ferguson &amp; David Senie, “Network Ingress Filtering: Defeating Denial of Service Attacks which employ IP Source Address Spoofing”</a><p>RFC 2827 / BCP 38, Mei 2000. Best Current Practice tentang ingress filtering untuk membatasi pemalsuan alamat sumber IP.</p></div>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner">
+      <span>Materi pembelajaran keamanan jaringan · fokus defensif</span>
+      <a href="#atas">Kembali ke atas ↑</a>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const $ = (selector) => document.querySelector(selector);
+      const generationData = [
+        {
+          title: "Packet filtering firewall",
+          summary: "Mencocokkan header paket dengan aturan jaringan/transport, lalu mengizinkan atau menolaknya.",
+          os: "OSI Layer 3–4",
+          layers: [3, 4],
+          sees: "Alamat IP sumber/tujuan, protokol, dan port; beberapa aturan juga memakai arah/interface.",
+          pros: "Sederhana dan efisien untuk kontrol dasar serta ACL jaringan.",
+          cons: "Tidak melacak koneksi secara penuh atau memeriksa makna payload aplikasi.",
+          examples: "Dapat menahan port/protokol yang tidak diizinkan. Paket balasan tanpa sesi dapat lolos jika aturan header terlalu permisif; payload berbahaya pada port web yang diizinkan juga dapat lewat."
+        },
+        {
+          title: "Stateful inspection firewall",
+          summary: "Mencatat flow/koneksi dan membandingkan paket dengan state yang telah dibentuk serta kebijakan.",
+          os: "OSI Layer 3–4 + state",
+          layers: [3, 4],
+          sees: "Informasi header paket ditambah tabel koneksi dan arah/alur komunikasi yang diamati.",
+          pros: "Dapat membedakan paket yang terkait koneksi sah dari trafik yang tidak punya state sesuai kebijakan.",
+          cons: "State koneksi bukan pemahaman penuh aplikasi; paket pada flow yang diizinkan dapat membawa konten bermasalah.",
+          examples: "Umumnya menahan reply unsolicited tanpa state yang cocok. Request HTTP berbahaya dalam koneksi web yang sah bisa lolos tanpa inspeksi aplikasi tambahan."
+        },
+        {
+          title: "Application layer / proxy firewall",
+          summary: "Menjadi perantara protokol aplikasi tertentu dan dapat memvalidasi pesan yang dipahami.",
+          os: "OSI Layer 7 untuk protokol yang didukung",
+          layers: [7],
+          sees: "Command, struktur, atau metadata protokol aplikasi yang didukung; bukan otomatis semua aplikasi atau payload terenkripsi.",
+          pros: "Dapat menerapkan kebijakan spesifik aplikasi dan memutus koneksi langsung antarendpoint.",
+          cons: "Dukungan protokol terbatas; proxy dapat menambah latency, memengaruhi throughput, atau tidak memahami trafik yang tidak didukung.",
+          examples: "Dapat menolak pola HTTP berbahaya jika protokol/rule mengenalinya. Aplikasi lain yang hanya ditunnel lewat port 443 dapat tampak sebagai koneksi proxy generik."
+        },
+        {
+          title: "Next-Generation Firewall (NGFW)",
+          summary: "Menggabungkan stateful firewall dengan application awareness/control (pengenalan dan pengendalian aplikasi) serta IPS (Intrusion Prevention System, sistem pencegahan intrusi) sesuai implementasi.",
+          os: "OSI Layer 3–7 sesuai fitur",
+          layers: [3, 4, 7],
+          sees: "Header, state, serta identitas/konteks aplikasi dan indikator ancaman jika fitur, rule, dan visibilitas tersedia.",
+          pros: "Kebijakan terpadu dapat memakai konteks aplikasi dan inspeksi ancaman tambahan di satu platform.",
+          cons: "Hasil bergantung fitur yang diaktifkan, kebijakan, pembaruan, kapasitas, dan visibilitas; enkripsi dapat membatasi inspeksi payload.",
+          examples: "Dapat menolak aplikasi yang dikenali sebagai tidak diizinkan atau payload yang terdeteksi oleh IPS. Aplikasi di port 443 dapat tetap tidak dikenal jika terenkripsi/tidak terklasifikasi atau inspeksi tidak dikonfigurasi."
+        }
+      ];
+      const scenarioData = {
+        syn: {
+          title: "Paket SYN biasa",
+          description: "SYN adalah paket pembuka koneksi TCP. Skenario ini mengasumsikan kebijakan contoh memang mengizinkan koneksi baru ke layanan tujuan.",
+          decisions: [
+            ["ALLOW", "Header cocok dengan aturan tujuan/port yang diizinkan."],
+            ["ALLOW", "Koneksi baru sesuai kebijakan; state dapat dibuat untuk flow ini."],
+            ["ALLOW", "Proxy menerima koneksi untuk layanan aplikasi yang didukung."],
+            ["ALLOW", "Aplikasi/layanan masuk kebijakan contoh dan tidak ada indikator untuk menolak."]
+          ]
+        },
+        "orphan-reply": {
+          title: "Paket reply tanpa koneksi yang pernah dibuat",
+          description: "Paket tampak seperti balasan TCP, tetapi tidak ada koneksi yang dibuat sebelumnya pada tabel state firewall.",
+          decisions: [
+            ["ALLOW (contoh)", "Jika ACL statis hanya mengizinkan header/port ini, packet filter sederhana mungkin melewatkannya; hasil bergantung rule."],
+            ["DENY", "Tidak cocok dengan koneksi/state yang diharapkan, sehingga ditolak oleh kebijakan stateful contoh."],
+            ["DENY", "Tidak terkait sesi proxy yang dibangun; tidak ada transaksi aplikasi yang diharapkan."],
+            ["DENY", "Kebijakan stateful contoh menolak paket tanpa flow sah; NGFW bukan jaminan tanpa konfigurasi."]
+          ]
+        },
+        "http-payload": {
+          title: "Request HTTP berisi payload berbahaya",
+          description: "Paket merupakan bagian dari request HTTP yang diizinkan, tetapi kontennya mengandung pola yang dianggap berbahaya oleh kebijakan simulasi.",
+          decisions: [
+            ["ALLOW", "Header IP/port cocok; packet filter tidak membaca payload HTTP."],
+            ["ALLOW", "Paket bagian dari flow yang sah; state koneksi saja tidak mengidentifikasi payload."],
+            ["DENY (jika terdeteksi)", "Proxy HTTP yang mendukung pemeriksaan dan rule terkait dapat menolak pola berbahaya; tidak semua konten otomatis dikenali."],
+            ["DENY (jika terdeteksi)", "IPS/application inspection yang aktif dapat memblokir pola yang dikenali. Hasil bergantung signature/rule dan visibilitas."]
+          ]
+        },
+        "port-disguise": {
+          title: "Aplikasi menyamar di port 443",
+          description: "Port tujuan terlihat seperti HTTPS, tetapi protokol/aplikasi yang sebenarnya bukan layanan yang dibolehkan. Pada skenario model ini, protokol dapat diklasifikasikan; trafik terenkripsi atau tidak terklasifikasi dapat menghasilkan visibilitas berbeda.",
+          decisions: [
+            ["ALLOW", "Aturan header yang hanya mengizinkan TCP/443 tidak mengenali aplikasi sebenarnya."],
+            ["ALLOW", "Stateful firewall melihat flow TCP yang dibentuk; port saja belum membuktikan aplikasi yang sah."],
+            ["DENY", "Dalam model ini proxy memeriksa protokol yang terlihat dan hanya mengizinkan HTTPS. Tunnel generik atau payload terenkripsi dapat membatasi pemeriksaan."],
+            ["DENY", "Dalam model ini NGFW mengidentifikasi aplikasi yang dilarang dan menolaknya. Aplikasi terenkripsi/tidak terklasifikasi bisa memerlukan kebijakan fallback."]
+          ]
+        }
+      };
+      const stageNames = ["Packet filtering", "Stateful inspection", "Application layer / proxy", "Next-Generation Firewall"];
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let selectedGeneration = 0;
+      let stageIndex = 0;
+      let timer = null;
+      let animationFrame = null;
+
+      function updateGeneration(index) {
+        selectedGeneration = Math.max(0, Math.min(generationData.length - 1, index));
+        const generation = generationData[selectedGeneration];
+        document.querySelectorAll(".generation-tab").forEach((tab, tabIndex) => {
+          const active = tabIndex === selectedGeneration;
+          tab.setAttribute("aria-selected", String(active));
+          tab.setAttribute("tabindex", active ? "0" : "-1");
+        });
+        const activeTab = $(`#gen-tab-${selectedGeneration}`);
+        $("#generation-content").setAttribute("aria-labelledby", activeTab.id);
+        $("#detail-kicker").textContent = `Generasi ${selectedGeneration + 1}`;
+        $("#detail-name").textContent = generation.title;
+        $("#detail-summary").textContent = generation.summary;
+        $("#detail-os").textContent = generation.os;
+        $("#detail-sees").textContent = generation.sees;
+        $("#detail-pros").textContent = generation.pros;
+        $("#detail-cons").textContent = generation.cons;
+        $("#detail-examples").textContent = generation.examples;
+        document.querySelectorAll(".osi-layer").forEach((layer) => {
+          layer.classList.toggle("inspected", generation.layers.includes(Number(layer.dataset.layer)));
+        });
+        $("#osi-note").textContent = `Generasi ${selectedGeneration + 1}: layer hijau menunjukkan informasi yang umum diperiksa pada model ini; detail implementasi dapat berbeda.`;
+      }
+
+      function stopAnimation() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+      }
+      function animatePacket(stage) {
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        const marker = $("#packet-marker");
+        marker.style.opacity = "0";
+        if (reducedMotion.matches) return;
+        const path = document.getElementById(`flow-${stage}`);
+        const length = path.getTotalLength();
+        const started = performance.now();
+        marker.style.opacity = "1";
+        function tick(now) {
+          const progress = Math.min((now - started) / 650, 1);
+          const point = path.getPointAtLength(length * progress);
+          marker.setAttribute("transform", `translate(${point.x} ${point.y})`);
+          if (progress < 1) animationFrame = requestAnimationFrame(tick);
+          else marker.style.opacity = "0";
+        }
+        animationFrame = requestAnimationFrame(tick);
+      }
+      function renderStage() {
+        const scenario = scenarioData[$("#scenario-select").value];
+        const [result, reason] = scenario.decisions[stageIndex];
+        $("#animation-count").textContent = `Tahap ${stageIndex + 1} dari ${stageNames.length}`;
+        $("#animation-stage").textContent = stageNames[stageIndex];
+        $("#animation-description").textContent = `${scenario.title}: ${scenario.description}`;
+        $("#decision-result").textContent = result;
+        $("#decision-reason").textContent = reason;
+        const isAllow = result.startsWith("ALLOW");
+        const isDeny = result.startsWith("DENY");
+        $("#decision-card").classList.toggle("allow", isAllow);
+        $("#decision-card").classList.toggle("deny", isDeny);
+        $("#back-step").disabled = stageIndex === 0;
+        $("#next-step").disabled = stageIndex === stageNames.length - 1;
+        for (let i = 0; i < stageNames.length; i += 1) {
+          const path = document.getElementById(`flow-${i}`);
+          const label = document.getElementById(`decision-label-${i}`);
+          const stageResult = scenario.decisions[i][0];
+          const activePath = i < stageIndex || (i === stageIndex && isAllow);
+          path.classList.toggle("active", activePath);
+          path.classList.toggle("blocked", i === stageIndex && isDeny);
+          label.textContent = i < stageIndex ? scenario.decisions[i][0] : i === stageIndex ? stageResult : "—";
+          label.setAttribute("fill", stageResult.startsWith("DENY") ? "var(--red)" : stageResult.startsWith("ALLOW") ? "var(--green)" : "var(--amber)");
+        }
+        animatePacket(stageIndex);
+      }
+      function advance() {
+        if (stageIndex >= stageNames.length - 1) {
+          stopAnimation();
+          return;
+        }
+        stageIndex += 1;
+        renderStage();
+      }
+      document.querySelectorAll(".generation-tab").forEach((tab, index) => {
+        tab.addEventListener("click", () => updateGeneration(index));
+        tab.addEventListener("keydown", (event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          const target = event.key === "Home" ? 0 : event.key === "End" ? 3 : (index + (event.key === "ArrowRight" ? 1 : 3)) % 4;
+          updateGeneration(target);
+          $(`#gen-tab-${target}`).focus();
+        });
+      });
+      $("#scenario-select").addEventListener("change", () => { stopAnimation(); stageIndex = 0; renderStage(); });
+      $("#back-step").addEventListener("click", () => { stopAnimation(); stageIndex = Math.max(0, stageIndex - 1); renderStage(); });
+      $("#next-step").addEventListener("click", () => { stopAnimation(); advance(); });
+      $("#play-animation").addEventListener("click", () => {
+        if (timer) return;
+        if (stageIndex >= stageNames.length - 1) stageIndex = 0;
+        timer = window.setInterval(() => {
+          if (stageIndex >= stageNames.length - 1) stopAnimation();
+          else advance();
+        }, reducedMotion.matches ? 2600 : 1800);
+      });
+      $("#pause-animation").addEventListener("click", stopAnimation);
+      $("#replay-animation").addEventListener("click", () => { stopAnimation(); stageIndex = 0; renderStage(); });
+      updateGeneration(0);
+      renderStage();
+
+      const answers = { q1: "a", q2: "b", q3: "a", q4: "b", q5: "a" };
+      $("#quiz-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        let score = 0;
+        let answered = 0;
+        Object.entries(answers).forEach(([name, correct]) => {
+          const selected = document.querySelector(`input[name="${name}"]:checked`);
+          const question = document.querySelector(`input[name="${name}"]`).closest(".question");
+          question.querySelectorAll(".explanation").forEach((note) => note.classList.remove("visible"));
+          if (!selected) return;
+          answered += 1;
+          const correctAnswer = selected.value === correct;
+          if (correctAnswer) score += 1;
+          question.querySelector(`[data-explanation="${correctAnswer ? correct : "other"}"]`).classList.add("visible");
+        });
+        const result = $("#quiz-result");
+        if (answered < Object.keys(answers).length) {
+          result.className = "needs-work";
+          result.textContent = `Jawab semua soal terlebih dahulu. Baru dijawab: ${answered} dari ${Object.keys(answers).length}.`;
+          return;
+        }
+        result.className = score === Object.keys(answers).length ? "good" : "needs-work";
+        result.textContent = `Skor: ${score} dari ${Object.keys(answers).length}. Penjelasan ditampilkan di tiap soal.`;
+      });
+      $("#quiz-form").addEventListener("reset", () => {
+        window.setTimeout(() => {
+          document.querySelectorAll(".explanation").forEach((note) => note.classList.remove("visible"));
+          const result = $("#quiz-result");
+          result.className = "";
+          result.textContent = "Skor akan muncul di sini.";
+        }, 0);
+      });
+    })();
+  </script>
+</body>
+</html>
